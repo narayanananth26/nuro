@@ -1,7 +1,9 @@
+import UrlHealthCheck from '@/components/UrlHealthCheck';
+
 export default function Home() {
   return (
-    <div>
-      Home page
-    </div>
+    <main className="min-h-screen bg-gray-50">
+      <UrlHealthCheck />
+    </main>
   );
 }

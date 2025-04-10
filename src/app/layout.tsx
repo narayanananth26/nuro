@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Nuro",
-  description: "URL Health Monitor",
+  title: "Nuro - URL Health Monitor",
+  description: "Monitor website uptime and response times with ease",
 };
 
 export default function RootLayout({
@@ -14,9 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        {children}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
