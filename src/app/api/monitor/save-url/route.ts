@@ -1,67 +1,87 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import dbConnect from "@/lib/dbConnect";
-import UrlMonitor from "@/models/UrlMonitor";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import UrlMonitor from '@/models/UrlMonitor';
+import mongoose from 'mongoose';
+import dbConnect from '@/lib/dbConnect';
 
-async function checkUrlHealth(url: string) {
-  const startTime = Date.now();
+export async function POST(request: Request) {
   try {
-    const response = await fetch(url);
-    const responseTime = Date.now() - startTime;
-    return {
-      status: response.status,
-      responseTime,
-      timestamp: new Date().toISOString(),
-    };
-  } catch (error) {
-    return {
-      status: 500,
-      responseTime: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    };
-  }
-}
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { url, interval } = await req.json();
-  if (!url || !interval) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-  }
-
-  await dbConnect();
-
-  try {
-    // Perform initial health check
-    const healthCheck = await checkUrlHealth(url);
+    const body = await request.json();
+    console.log('Received request body:', body);
     
-    // Create monitor with initial health check
-    const monitor = await UrlMonitor.create({
-      userId: session.user.id,
-      url,
-      interval,
-      lastChecked: new Date(),
+    const { url, interval } = body;
+    console.log('Extracted values - url:', url, 'interval:', interval, 'type:', typeof interval);
+    
+    if (!url || typeof interval !== 'number' || interval <= 0) {
+      return NextResponse.json({ error: 'Valid URL and interval are required' }, { status: 400 });
+    }
+
+    await dbConnect();
+
+    // Check if URL is reachable
+    const startTime = Date.now();
+    let healthCheck;
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      healthCheck = {
+        status: response.status,
+        responseTime: Date.now() - startTime
+      };
+    } catch (error) {
+      console.error('Health check failed:', error);
+      healthCheck = {
+        status: 500,
+        responseTime: 0
+      };
+    }
+
+    // Create log entry first to validate it
+    const logEntry = {
+      timestamp: new Date(),
       status: healthCheck.status < 400 ? "UP" : "DOWN",
       responseTime: healthCheck.responseTime,
-      logs: [{
-        timestamp: healthCheck.timestamp,
-        status: healthCheck.status < 400 ? "UP" : "DOWN",
-        responseTime: healthCheck.responseTime,
-      }],
+      interval: interval
+    };
+    console.log('Created log entry:', logEntry);
+
+    // Check if monitor already exists for this user and URL
+    let monitor = await UrlMonitor.findOne({
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      url: url
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      monitor,
-      healthCheck 
-    });
-  } catch (err) {
-    console.error("Error saving URL:", err);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+    if (monitor) {
+      // Update existing monitor
+      monitor.logs = monitor.logs || [];
+      monitor.logs.push(logEntry);
+
+      // Keep only last 1000 logs
+      if (monitor.logs.length > 1000) {
+        monitor.logs = monitor.logs.slice(-1000);
+      }
+
+      monitor = await monitor.save();
+    } else {
+      // Create new monitor
+      monitor = await UrlMonitor.create({
+        userId: new mongoose.Types.ObjectId(session.user.id),
+        url,
+        logs: [logEntry]
+      });
+    }
+
+    return NextResponse.json(monitor);
+  } catch (error) {
+    console.error('Error saving URL:', error);
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

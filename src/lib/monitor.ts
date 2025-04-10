@@ -21,6 +21,7 @@ async function logMonitorResult(monitor: any, status: "UP" | "DOWN" | "UNKNOWN",
     timestamp: now,
     status,
     responseTime: responseTime || 0,
+    interval: monitor.interval
   });
 
   // Keep only last 1000 logs to prevent document size issues

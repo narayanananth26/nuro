@@ -1,5 +1,25 @@
 import mongoose from "mongoose";
 
+const LogSchema = new mongoose.Schema({
+  timestamp: {
+    type: Date,
+    required: true,
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ["UP", "DOWN", "UNKNOWN"],
+  },
+  responseTime: {
+    type: Number,
+    required: true,
+  },
+  interval: {
+    type: Number,
+    required: true,
+  }
+});
+
 const UrlMonitorSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -10,29 +30,7 @@ const UrlMonitorSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  interval: {
-    type: Number, // in minutes
-    required: true,
-  },
-  lastChecked: {
-    type: Date,
-    default: null,
-  },
-  status: {
-    type: String, // "UP" or "DOWN"
-    default: "UNKNOWN",
-  },
-  responseTime: {
-    type: Number, // in milliseconds
-    default: null,
-  },
-  logs: [
-    {
-      timestamp: Date,
-      status: String, // "UP" or "DOWN"
-      responseTime: Number, // ms
-    },
-  ],
+  logs: [LogSchema]
 }, {
   timestamps: true,
 });

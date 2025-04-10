@@ -26,19 +26,37 @@ export default function UrlMonitorForm() {
 
     setIsSubmitting(true);
     try {
+      // Validate URL
+      try {
+        new URL(url);
+      } catch (error) {
+        toast.error('Please enter a valid URL (including http:// or https://)');
+        return;
+      }
+
+      const intervalNum = Number(interval);
+      if (isNaN(intervalNum) || intervalNum <= 0) {
+        toast.error('Please select a valid interval');
+        return;
+      }
+
       const response = await fetch('/api/monitor/save-url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url, interval: parseInt(interval) }),
+        body: JSON.stringify({
+          url,
+          interval: intervalNum
+        }),
       });
 
       const data = await response.json();
-      if (data.success) {
+      
+      if (response.ok) {
         toast.success('URL saved and monitoring started.');
         setUrl('');
-        setHealthCheck(data.healthCheck);
+        setInterval('5');
         
         // Refresh the monitors table
         await mutate('/api/user/monitors');
@@ -46,7 +64,11 @@ export default function UrlMonitorForm() {
         throw new Error(data.error || 'Failed to save URL');
       }
     } catch (error) {
-      toast.error('Failed to save URL. Please try again.');
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to save URL. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -95,28 +117,6 @@ export default function UrlMonitorForm() {
           {isSubmitting ? 'Saving...' : 'Save & Monitor'}
         </button>
       </form>
-
-      {healthCheck && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-medium mb-2">Initial Health Check Results</h3>
-          <div className="space-y-2">
-            <p>
-              <span className="font-medium">Status:</span>{' '}
-              <span className={healthCheck.status < 400 ? 'text-green-600' : 'text-red-600'}>
-                {healthCheck.status}
-              </span>
-            </p>
-            <p>
-              <span className="font-medium">Response Time:</span>{' '}
-              {healthCheck.responseTime}ms
-            </p>
-            <p>
-              <span className="font-medium">Timestamp:</span>{' '}
-              {new Date(healthCheck.timestamp).toLocaleString()}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

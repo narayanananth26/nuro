@@ -15,8 +15,11 @@ export async function GET() {
     await dbConnect();
     const userId = session.user.id;
 
-    const monitors = await UrlMonitor.find({ userId: new mongoose.Types.ObjectId(userId) })
-      .sort({ createdAt: -1 });
+    const monitors = await UrlMonitor.find({ 
+      userId: new mongoose.Types.ObjectId(userId) 
+    })
+    .select('url status lastChecked responseTime interval logs')
+    .sort({ createdAt: -1 });
 
     return NextResponse.json(monitors);
   } catch (error) {
@@ -36,7 +39,10 @@ export async function PUT(request: Request) {
     await dbConnect();
 
     const monitor = await UrlMonitor.findOneAndUpdate(
-      { _id: id, userId: session.user.id },
+      { 
+        _id: new mongoose.Types.ObjectId(id), 
+        userId: new mongoose.Types.ObjectId(session.user.id) 
+      },
       { $set: { url, interval } },
       { new: true }
     );
@@ -61,18 +67,18 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-
     if (!id) {
       return NextResponse.json({ error: 'Monitor ID required' }, { status: 400 });
     }
 
     await dbConnect();
-    const result = await UrlMonitor.findOneAndDelete({
-      _id: id,
-      userId: session.user.id
+
+    const monitor = await UrlMonitor.findOneAndDelete({
+      _id: new mongoose.Types.ObjectId(id),
+      userId: new mongoose.Types.ObjectId(session.user.id)
     });
 
-    if (!result) {
+    if (!monitor) {
       return NextResponse.json({ error: 'Monitor not found' }, { status: 404 });
     }
 
