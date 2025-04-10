@@ -13,6 +13,7 @@ interface Monitor {
 }
 
 type FilterStatus = 'ALL' | 'UP' | 'DOWN';
+const ITEMS_PER_PAGE = 5;
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 const MONITORS_KEY = '/api/user/monitors';
@@ -27,6 +28,7 @@ export default function MonitorsTable() {
   const [editUrl, setEditUrl] = useState('');
   const [editInterval, setEditInterval] = useState<number>(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   if (error) return <div className="text-red-500">Failed to load monitors</div>;
   if (!monitors) return <div>Loading...</div>;
@@ -35,6 +37,14 @@ export default function MonitorsTable() {
     if (filterStatus === 'ALL') return true;
     return monitor.status === filterStatus;
   });
+
+  const totalPages = Math.ceil(filteredMonitors.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedMonitors = filteredMonitors.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -74,6 +84,10 @@ export default function MonitorsTable() {
       if (!response.ok) throw new Error('Failed to delete monitor');
       
       await refreshMonitors();
+      // Adjust current page if the last item on the page is deleted
+      if (paginatedMonitors.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (error) {
       console.error('Error deleting monitor:', error);
     }
@@ -86,7 +100,10 @@ export default function MonitorsTable() {
           {(['ALL', 'UP', 'DOWN'] as FilterStatus[]).map((status) => (
             <button
               key={status}
-              onClick={() => setFilterStatus(status)}
+              onClick={() => {
+                setFilterStatus(status);
+                setCurrentPage(1); // Reset to first page when filter changes
+              }}
               className={`px-4 py-2 rounded ${
                 filterStatus === status
                   ? 'bg-blue-500 text-white'
@@ -136,7 +153,7 @@ export default function MonitorsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredMonitors.map((monitor) => (
+            {paginatedMonitors.map((monitor) => (
               <tr key={monitor._id}>
                 {editingMonitor?._id === monitor._id ? (
                   <>
@@ -232,6 +249,52 @@ export default function MonitorsTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-gray-700">
+            Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredMonitors.length)} of {filteredMonitors.length} results
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded ${
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              }`}
+            >
+              Previous
+            </button>
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => handlePageChange(i + 1)}
+                className={`px-3 py-1 rounded ${
+                  currentPage === i + 1
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded ${
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
