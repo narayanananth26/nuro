@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
+import { mutate } from 'swr';
 
 interface HealthCheckResult {
   status: number;
@@ -38,6 +39,9 @@ export default function UrlMonitorForm() {
         toast.success('URL saved and monitoring started.');
         setUrl('');
         setHealthCheck(data.healthCheck);
+        
+        // Refresh the monitors table
+        await mutate('/api/user/monitors');
       } else {
         throw new Error(data.error || 'Failed to save URL');
       }
