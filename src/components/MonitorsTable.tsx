@@ -23,7 +23,7 @@ export default function MonitorsTable() {
   const [editUrl, setEditUrl] = useState('');
   const [editInterval, setEditInterval] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [drawerWidth, setDrawerWidth] = useState(400);
+  const [drawerWidth, setDrawerWidth] = useState(600);
 
   const { data: monitors, error, mutate: refreshMonitors } = useSWR<UrlMonitor[]>(MONITORS_KEY, fetcher, {
     refreshInterval: 60000,

@@ -15,7 +15,7 @@ interface UrlStatsDrawerProps {
 
 export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRangeChange, onWidthChange, width: initialWidth }: UrlStatsDrawerProps) {
   const [isVisible, setIsVisible] = useState(true);
-  const [width, setWidth] = useState(initialWidth);
+  const [width, setWidth] = useState(initialWidth || 600);
 
   useEffect(() => {
     setIsVisible(true);
@@ -23,12 +23,13 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
   }, [monitor._id]);
 
   useEffect(() => {
-    setWidth(initialWidth);
+    setWidth(initialWidth || 600);
   }, [initialWidth]);
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef(0);
   const dragStartWidth = useRef(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent text selection
@@ -67,6 +68,32 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
       document.body.classList.remove('no-select');
     };
   }, [isDragging, onWidthChange]);
+
+  const handleExport = async (format: 'csv' | 'json') => {
+    try {
+      setIsExporting(true);
+      const res = await fetch('/api/monitor/export-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monitorId: monitor._id, format })
+      });
+
+      if (!res.ok) throw new Error('Export failed');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logs-${monitor._id}.${format}`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export logs. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const days = timeRange === '7d' ? 7 : 30;
   const cutoffDate = subDays(new Date(), days);
@@ -138,23 +165,37 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
           </div>
         </div>
 
-        <div className="mb-4 flex gap-2">
-          <button
-            onClick={() => onTimeRangeChange('7d')}
-            className={`px-3 py-1 rounded ${
-              timeRange === '7d' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
-          >
-            7 Days
-          </button>
-          <button
-            onClick={() => onTimeRangeChange('30d')}
-            className={`px-3 py-1 rounded ${
-              timeRange === '30d' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
-          >
-            30 Days
-          </button>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => onTimeRangeChange('7d')}
+              className={`px-3 py-1 rounded ${timeRange === '7d' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+            >
+              7 Days
+            </button>
+            <button
+              onClick={() => onTimeRangeChange('30d')}
+              className={`px-3 py-1 rounded ${timeRange === '30d' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+            >
+              30 Days
+            </button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handleExport('csv')}
+              disabled={isExporting}
+              className="px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => handleExport('json')}
+              disabled={isExporting}
+              className="px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+            >
+              Export JSON
+            </button>
+          </div>
         </div>
 
         <div className="flex-grow overflow-auto">
