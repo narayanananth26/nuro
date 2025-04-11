@@ -66,27 +66,32 @@ export default function MonitorsTable() {
 
   // Pagination UI helper
   const getPageNumbers = useMemo(() => {
-    const pageNumbers: (number | string)[] = [];
-    if (totalPages <= 7) {
-      // Show all pages if 7 or fewer
+    const pageNumbers: number[] = [];
+    const maxVisiblePages = 5; // Maximum number of page buttons to show
+    
+    // For small number of pages, show all page numbers
+    if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
-    } else {
-      // Always show first page
-      pageNumbers.push(1);
-      
-      if (currentPage <= 3) {
-        // Near the start
-        pageNumbers.push(2, 3, 4, '...', totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        // Near the end
-        pageNumbers.push('...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        // Middle - show current page and neighbors
-        pageNumbers.push('...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
-      }
+      return pageNumbers;
     }
+    
+    // For larger number of pages, show a sliding window of pages
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = startPage + maxVisiblePages - 1;
+    
+    // Adjust if we're near the end
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // Generate the page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
     return pageNumbers;
   }, [currentPage, totalPages]);
 
@@ -169,7 +174,7 @@ export default function MonitorsTable() {
                   toast.error('Failed to refresh monitors');
                 }
               }}
-              className="p-2 rounded-full hover:bg-gray-100 text-blue-600"
+              className="p-2 rounded-full hover:bg-[#2D2D2D] text-[#E3CF20]"
               title="Refresh monitors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,7 +184,7 @@ export default function MonitorsTable() {
             <button
               onClick={() => setFilterStatus('ALL')}
               className={`px-3 py-1 rounded ${
-                filterStatus === 'ALL' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                filterStatus === 'ALL' ? 'bg-[#E3CF20] text-[#121212]' : 'bg-[#2D2D2D] text-white'
               }`}
             >
               All
@@ -187,7 +192,7 @@ export default function MonitorsTable() {
             <button
               onClick={() => setFilterStatus('UP')}
               className={`px-3 py-1 rounded ${
-                filterStatus === 'UP' ? 'bg-green-500 text-white' : 'bg-gray-200'
+                filterStatus === 'UP' ? 'bg-green-500 text-[#121212]' : 'bg-[#2D2D2D] text-white'
               }`}
             >
               Up
@@ -195,7 +200,7 @@ export default function MonitorsTable() {
             <button
               onClick={() => setFilterStatus('DOWN')}
               className={`px-3 py-1 rounded ${
-                filterStatus === 'DOWN' ? 'bg-red-500 text-white' : 'bg-gray-200'
+                filterStatus === 'DOWN' ? 'bg-red-500 text-[#121212]' : 'bg-[#2D2D2D] text-white'
               }`}
             >
               Down
@@ -203,115 +208,218 @@ export default function MonitorsTable() {
           </div>
         </div>
 
-        <div className="shadow overflow-x-auto border-b border-gray-200 sm:rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interval</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedLogs.map((log, index) => (
-                <tr key={`${log.monitorId}-${index}`}>
-                  <td className="px-6 py-4">{log.url}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded ${
-                      log.status === 'UP' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {log.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
-                  </td>
-                  <td className="px-6 py-4">
-                    {log.responseTime}ms
-                  </td>
-                  <td className="px-6 py-4">
-                    {log.interval > 0 ? `Every ${log.interval} ${log.interval === 1 ? 'minute' : 'minutes'}` : 'Not set'}
-                  </td>
-                  <td className="px-6 py-4 space-x-2">
-                    <button
-                      onClick={() => {
-                        const monitor = monitors.find(m => m._id === log.monitorId);
-                        if (monitor) {
-                          setEditingMonitor(monitor);
-                          setEditUrl(monitor.url);
-                          setEditInterval(log.interval);
-                        }
-                      }}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(log.monitorId)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => {
-                        const monitor = monitors.find(m => m._id === log.monitorId);
-                        if (monitor) setSelectedMonitor(monitor);
-                      }}
-                      className="text-purple-600 hover:text-purple-900"
-                    >
-                      Stats
-                    </button>
-                  </td>
+        {monitors.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            No monitors found. Add a URL to start monitoring.
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            No logs found for the selected filter.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[#333333] table-fixed">
+              <thead className="bg-[#1E1E1E]">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[250px]">
+                    URL
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
+                    Response Time
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[150px]">
+                    Last Checked
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                    Interval
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-[#121212] divide-y divide-[#333333]">
+                {paginatedLogs.map((log, index) => {
+                  const monitor = monitors.find(m => m._id === log.monitorId);
+                  if (!monitor) return null;
+                  
+                  return (
+                    <tr key={`${log.monitorId}-${log.timestamp}`} className="hover:bg-[#1E1E1E]">
+                      <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate">
+                        <a 
+                          href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="hover:text-[#E3CF20] hover:underline"
+                          title={monitor.url}
+                        >
+                          {monitor.url}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px]">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          log.status === 'UP' 
+                            ? 'bg-green-900 text-green-300'
+                            : 'bg-red-900 text-red-300'
+                        }`}>
+                          {log.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px]">
+                        {log.responseTime}ms
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px]">
+                        {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px]">
+                        {(() => {
+                          // Ensure interval is a valid number
+                          // Force conversion to number to handle string values from API
+                          const intervalValue = monitor.interval;
+                          const interval = Number(intervalValue);
+                          
+                          // Special case for 'once' (interval = 0)
+                          // Use strict equality with 0 after conversion
+                          if (interval === 0) {
+                            return 'Once';
+                          }
+                          
+                          if (isNaN(interval) || interval < 0) {
+                            return '5m'; // Default fallback
+                          }
+                          
+                          // Format based on minutes
+                          return interval < 60 
+                            ? `${interval}m` 
+                            : `${Math.floor(interval / 60)}h`;
+                        })()} 
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button 
+                          onClick={() => setSelectedMonitor(monitor)}
+                          className="text-[#E3CF20] border border-[#E3CF20] px-3 py-1 rounded-md hover:text-[#F0E867] hover:bg-[#8F8412] mr-4 cursor-pointer"
+                        >
+                          View Stats
+                        </button>
+                        {editingMonitor?._id === monitor._id ? (
+                          <div className="flex items-center space-x-2">
+                            <input 
+                              type="url" 
+                              value={editUrl} 
+                              onChange={(e) => setEditUrl(e.target.value)}
+                              className="w-40 text-sm hover:border-[#E3CF20]"
+                              placeholder="URL"
+                            />
+                            <select 
+                              value={editInterval} 
+                              onChange={(e) => setEditInterval(Number(e.target.value))}
+                              className="text-sm hover:border-[#E3CF20] custom-select min-w-[100px] w-[100px]"
+                            >
+                              <option value="5">5m</option>
+                              <option value="10">10m</option>
+                              <option value="30">30m</option>
+                              <option value="60">1h</option>
+                            </select>
+                            <button 
+                              onClick={() => handleEdit(monitor)}
+                              className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 cursor-pointer"
+                            >
+                              Save
+                            </button>
+                            <button 
+                              onClick={() => setEditingMonitor(null)}
+                              className="text-gray-400 hover:text-gray-300 px-2 py-1 rounded-md border border-gray-400 hover:bg-gray-700 ml-2 cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => {
+                                setEditingMonitor(monitor);
+                                setEditUrl(monitor.url);
+                                setEditInterval(monitor.interval);
+                              }}
+                              className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 mr-4 cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to delete ${monitor.url}?`)) {
+                                  handleDelete(monitor._id);
+                                }
+                              }}
+                              className="text-red-400 hover:text-red-300 px-2 py-1 rounded-md border border-red-400 hover:bg-red-900 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Pagination */}
         <div className="flex justify-between items-center mt-4">
-          <div>
+          <div className="text-sm text-gray-400">
             Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} logs
           </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 hover:bg-gray-300"
-            >
-              Previous
-            </button>
-            
-            <div className="flex space-x-1">
-              {getPageNumbers.map((pageNum, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
-                  disabled={pageNum === currentPage || typeof pageNum === 'string'}
-                  className={`w-8 h-8 flex items-center justify-center rounded ${
-                    pageNum === currentPage
-                      ? 'bg-blue-500 text-white'
-                      : typeof pageNum === 'string'
-                      ? 'text-gray-500 cursor-default'
-                      : 'bg-gray-200 hover:bg-gray-300'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              ))}
-            </div>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              {/* Left Arrow */}
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="w-8 h-8 flex items-center justify-center rounded bg-[#1E1E1E] disabled:opacity-50 hover:bg-[#333333] transition-colors"
+                aria-label="Previous Page"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              {/* Page Numbers */}
+              <div className="flex space-x-1">
+                {getPageNumbers.map((pageNum, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentPage(pageNum)}
+                    disabled={pageNum === currentPage}
+                    className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+                      pageNum === currentPage
+                        ? 'bg-[#E3CF20] text-[#121212] font-medium'
+                        : 'bg-[#1E1E1E] hover:bg-[#333333] text-gray-300'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+              </div>
 
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 hover:bg-gray-300"
-            >
-              Next
-            </button>
-          </div>
+              {/* Right Arrow */}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="w-8 h-8 flex items-center justify-center rounded bg-[#1E1E1E] disabled:opacity-50 hover:bg-[#333333] transition-colors"
+                aria-label="Next Page"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

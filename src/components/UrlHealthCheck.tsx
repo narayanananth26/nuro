@@ -44,10 +44,10 @@ export default function UrlHealthCheck() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">URL Health Monitor</h1>
+      <h1 className="text-3xl font-bold mb-6 text-white">URL Health Monitor</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="url" className="block text-sm font-medium mb-2">
+          <label htmlFor="url" className="block text-sm font-medium mb-2 text-white">
             Enter URL to check
           </label>
           <input
@@ -57,39 +57,39 @@ export default function UrlHealthCheck() {
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com"
             required
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full hover:border-[#E3CF20]"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#E3CF20] text-[#121212] py-2 px-4 rounded-lg hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Checking...' : 'Check Health'}
         </button>
       </form>
 
       {error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
+        <div className="mt-4 p-4 bg-red-900 text-red-300 rounded-lg">
           {error}
         </div>
       )}
 
       {result && (
-        <div className="mt-6 p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Health Check Results</h2>
+        <div className="mt-6 p-6 bg-[#1E1E1E] border border-[#333333] rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4 text-white">Health Check Results</h2>
           <div className="space-y-2">
-            <p>
+            <p className="text-white">
               <span className="font-medium">Status:</span>{' '}
-              <span className={result.status < 400 ? 'text-green-600' : 'text-red-600'}>
+              <span className={result.status < 400 ? 'text-green-400' : 'text-red-400'}>
                 {result.status}
               </span>
             </p>
-            <p>
+            <p className="text-white">
               <span className="font-medium">Response Time:</span>{' '}
               {result.responseTime}ms
             </p>
-            <p>
+            <p className="text-white">
               <span className="font-medium">Timestamp:</span>{' '}
               {new Date(result.timestamp).toLocaleString()}
             </p>

@@ -1,0 +1,11 @@
+<!-- Save as 'favicon.svg' in your /public folder -->
+<svg width="128" height="128" viewBox="0 0 150 400" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M 0 200 l 40 0 l 5 -40 l 5 40 l 10 0 l 5 15 l 10 -140 l 10 220 l 5 -95 l 10 0 l 5 20 l 5 -20 l 30 0"
+    fill="transparent"
+    stroke="#E3CF20"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

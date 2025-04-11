@@ -2,6 +2,7 @@ export interface UrlMonitor {
   _id: string;
   url: string;
   userId: string;
+  interval: number;
   logs: MonitorLog[];
 }
 

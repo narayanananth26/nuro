@@ -15,13 +15,40 @@ export async function GET() {
     await dbConnect();
     const userId = session.user.id;
 
+    console.log('Fetching monitors for user:', userId);
+    
     const monitors = await UrlMonitor.find({ 
       userId: new mongoose.Types.ObjectId(userId) 
     })
     .select('url status lastChecked responseTime interval logs')
     .sort({ createdAt: -1 });
+    
+    console.log('Found monitors:', monitors.length);
+    monitors.forEach((monitor, index) => {
+      console.log(`Monitor ${index + 1}:`, {
+        url: monitor.url,
+        interval: monitor.interval,
+        intervalType: typeof monitor.interval
+      });
+    });
 
-    return NextResponse.json(monitors);
+    // Convert interval to number to ensure consistent type
+    const processedMonitors = monitors.map(monitor => {
+      const processed = monitor.toObject();
+      processed.interval = Number(processed.interval);
+      return processed;
+    });
+    
+    console.log('Processed monitors with numeric intervals');
+    processedMonitors.forEach((monitor, index) => {
+      console.log(`Processed monitor ${index + 1}:`, {
+        url: monitor.url,
+        interval: monitor.interval,
+        intervalType: typeof monitor.interval
+      });
+    });
+    
+    return NextResponse.json(processedMonitors);
   } catch (error) {
     console.error('Error fetching monitors:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -16,6 +16,7 @@ interface UrlStatsDrawerProps {
 export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRangeChange, onWidthChange, width: initialWidth }: UrlStatsDrawerProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [width, setWidth] = useState(initialWidth || 600);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsVisible(true);
@@ -25,6 +26,20 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
   useEffect(() => {
     setWidth(initialWidth || 600);
   }, [initialWidth]);
+  
+  // Handle click outside to close drawer
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef(0);
@@ -124,7 +139,8 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
 
   return (
     <div 
-      className={`fixed top-[65px] bottom-0 right-0 bg-white shadow-xl transform transition-transform duration-300 ${
+      ref={drawerRef}
+      className={`fixed top-[65px] bottom-0 right-0 bg-[#1E1E1E] shadow-xl transform transition-transform duration-300 border-l border-[#333333] ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ width: `${width}px` }}
@@ -140,28 +156,28 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
 
       <div className="h-full flex flex-col p-6 overflow-hidden">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Monitor Stats</h2>
+          <h2 className="text-xl font-semibold text-white">Monitor Stats</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-400 hover:text-white"
           >
             ✕
           </button>
         </div>
 
         <div className="mb-6">
-          <h3 className="font-medium mb-2">URL</h3>
-          <p className="text-gray-600 break-all">{monitor.url}</p>
+          <h3 className="font-medium mb-2 text-white">URL</h3>
+          <p className="text-gray-300 break-all">{monitor.url}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-50 p-4 rounded">
-            <h4 className="text-sm text-gray-500 mb-1">Uptime</h4>
-            <p className="text-2xl font-semibold">{uptimePercentage}%</p>
+          <div className="bg-[#121212] border border-[#333333] p-4 rounded">
+            <h4 className="text-sm text-gray-400 mb-1">Uptime</h4>
+            <p className="text-2xl font-semibold text-[#E3CF20]">{uptimePercentage}%</p>
           </div>
-          <div className="bg-gray-50 p-4 rounded">
-            <h4 className="text-sm text-gray-500 mb-1">Avg Response</h4>
-            <p className="text-2xl font-semibold">{avgResponseTime}ms</p>
+          <div className="bg-[#121212] border border-[#333333] p-4 rounded">
+            <h4 className="text-sm text-gray-400 mb-1">Avg Response</h4>
+            <p className="text-2xl font-semibold text-[#E3CF20]">{avgResponseTime}ms</p>
           </div>
         </div>
 
@@ -169,13 +185,13 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
           <div className="flex items-center space-x-4">
             <button
               onClick={() => onTimeRangeChange('7d')}
-              className={`px-3 py-1 rounded ${timeRange === '7d' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+              className={`px-3 py-1 rounded ${timeRange === '7d' ? 'bg-[#E3CF20] text-[#121212]' : 'bg-[#2D2D2D] text-white'}`}
             >
               7 Days
             </button>
             <button
               onClick={() => onTimeRangeChange('30d')}
-              className={`px-3 py-1 rounded ${timeRange === '30d' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+              className={`px-3 py-1 rounded ${timeRange === '30d' ? 'bg-[#E3CF20] text-[#121212]' : 'bg-[#2D2D2D] text-white'}`}
             >
               30 Days
             </button>
@@ -184,14 +200,14 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
             <button
               onClick={() => handleExport('csv')}
               disabled={isExporting}
-              className="px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+              className="px-3 py-1 rounded bg-[#E3CF20] text-[#121212] hover:bg-[#d4c01c] disabled:opacity-50"
             >
               Export CSV
             </button>
             <button
               onClick={() => handleExport('json')}
               disabled={isExporting}
-              className="px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+              className="px-3 py-1 rounded bg-[#E3CF20] text-[#121212] hover:bg-[#d4c01c] disabled:opacity-50"
             >
               Export JSON
             </button>

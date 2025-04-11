@@ -1,0 +1,23 @@
+/* Auth pages specific styles */
+body {
+  overflow: hidden;
+  height: 100vh;
+}
+
+.auth-container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.auth-form-container {
+  max-width: 480px;
+  width: 100%;
+  padding: 2rem;
+  background-color: #1E1E1E;
+  border: 1px solid #333333;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

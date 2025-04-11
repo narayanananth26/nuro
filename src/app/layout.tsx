@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Providers from "@/components/Providers";
-import Navigation from "@/components/Navigation";
+import ConditionalNavigation from "@/components/ConditionalNavigation";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -18,12 +18,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-[#121212] text-white min-h-screen`}>
         <Providers>
-          <Navigation />
-          <main className="container mx-auto px-4 pt-24 pb-8">
-            {children}
-          </main>
+          <ConditionalNavigation />
+          {children}
         </Providers>
       </body>
     </html>

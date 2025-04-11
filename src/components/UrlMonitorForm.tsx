@@ -142,26 +142,43 @@ export default function UrlMonitorForm() {
           // Then save it if user is logged in
           if (session) {
             // Convert interval format from "5m" to numeric minutes for API
-            const intervalMatch = urlData.interval.match(/^(\d+)([m|h])$/);
-            if (!intervalMatch) {
-              throw new Error(`Invalid interval format for ${urlData.url}`);
-            }
+            // Handle 'once' option or regular intervals
+            let intervalMinutes = 0; // 0 means check once, don't monitor
             
-            const intervalNum = parseInt(intervalMatch[1]);
-            const intervalUnit = intervalMatch[2];
-            const intervalMinutes = intervalUnit === 'h' ? intervalNum * 60 : intervalNum;
+            console.log('Processing interval:', urlData.interval);
+            
+            if (urlData.interval !== 'once') {
+              const intervalMatch = urlData.interval.match(/^(\d+)([m|h])$/);
+              if (!intervalMatch) {
+                throw new Error(`Invalid interval format for ${urlData.url}`);
+              }
+              
+              const intervalNum = parseInt(intervalMatch[1]);
+              const intervalUnit = intervalMatch[2];
+              intervalMinutes = intervalUnit === 'h' ? intervalNum * 60 : intervalNum;
+              console.log('Converted interval to minutes:', intervalMinutes);
+            } else {
+              console.log('"Once" option selected, setting interval to 0');
+            }
             const normalizedUrl = normalizeUrl(urlData.url);
+            
+            const requestBody = {
+              url: normalizedUrl,
+              interval: intervalMinutes
+            };
+            
+            console.log('Sending request to API:', requestBody);
             
             const response = await fetch('/api/monitor/save-url', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                url: normalizedUrl,
-                interval: intervalMinutes
-              }),
+              body: JSON.stringify(requestBody),
             });
+            
+            const responseData = await response.json();
+            console.log('API response:', responseData);
             
             if (response.ok) {
               // Reset pagination to page 1 when a new URL is saved
@@ -209,9 +226,9 @@ export default function UrlMonitorForm() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         {urls.map((url, index) => (
-          <div key={index} className="flex gap-4 items-center">
+          <div key={index} className="flex gap-4 items-end">
             <div className="flex-1">
-              <label htmlFor={`url-${index}`} className="block text-sm font-medium text-gray-700">
+              <label htmlFor={`url-${index}`} className="block text-sm font-medium text-white">
                 Website URL
               </label>
               <input
@@ -221,20 +238,21 @@ export default function UrlMonitorForm() {
                 onChange={(e) => handleUrlChange(index, 'url', e.target.value)}
                 placeholder="https://example.com"
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full hover:border-[#E3CF20]"
               />
             </div>
 
             <div className="flex-1">
-              <label htmlFor={`interval-${index}`} className="block text-sm font-medium text-gray-700">
+              <label htmlFor={`interval-${index}`} className="block text-sm font-medium text-white">
                 Check Interval
               </label>
               <select
                 id={`interval-${index}`}
                 value={url.interval}
                 onChange={(e) => handleUrlChange(index, 'interval', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full hover:border-[#E3CF20] custom-select min-w-[200px]"
               >
+                <option value="once">Once (no monitoring)</option>
                 <option value="5m">5 minutes</option>
                 <option value="10m">10 minutes</option>
                 <option value="30m">30 minutes</option>
@@ -242,15 +260,21 @@ export default function UrlMonitorForm() {
               </select>
             </div>
 
-            {index > 0 && (
-              <button
-                type="button"
-                onClick={() => handleRemoveUrl(index)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Remove
-              </button>
-            )}
+            <div className="flex items-center h-10">
+              {index > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveUrl(index)}
+                  className="text-red-400 hover:text-red-300 px-2 py-1 rounded-md border border-red-400 hover:bg-red-900 flex items-center justify-center w-10 h-10"
+                  aria-label="Remove URL"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              {index === 0 && <div className="w-10 h-10"></div>}
+            </div>
           </div>
         ))}
 
@@ -258,15 +282,18 @@ export default function UrlMonitorForm() {
           <button
             type="button"
             onClick={handleAddUrl}
-            className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            className="px-4 py-2 text-sm font-medium text-[#E3CF20] hover:text-[#d4c01c] border border-[#E3CF20] rounded-md hover:bg-[#2D2D2D] flex items-center justify-between"
           >
-            ➕ Add another URL
+            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <line x1="12" y1="5" x2="12" y2="19" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
+  <line x1="5" y1="12" x2="19" y2="12" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
+</svg> Add another URL
           </button>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-2 text-sm font-medium text-[#121212] bg-[#E3CF20] rounded-md hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {session ? 'Save & Monitor' : 'Check Now'}
           </button>
@@ -275,24 +302,24 @@ export default function UrlMonitorForm() {
 
       {Object.entries(healthCheckResults).length > 0 && (
         <div className="mt-6">
-          <h3 className="text-lg font-medium mb-2">Check Results</h3>
+          <h3 className="text-lg font-medium mb-2 text-white">Check Results</h3>
           <div className="space-y-4">
             {Object.entries(healthCheckResults).map(([url, result]) => (
-              <div key={url} className="p-4 border rounded-md">
+              <div key={url} className="p-4 border border-[#333333] bg-[#1E1E1E] rounded-md">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h4 className="font-medium">{result.originalUrl || url}</h4>
+                    <h4 className="font-medium text-white">{result.originalUrl || url}</h4>
                     <p className={`mt-1 text-sm ${
-                      result.status < 400 ? 'text-green-600' : 'text-red-600'
+                      result.status < 400 ? 'text-green-400' : 'text-red-400'
                     }`}>
                       Status: {result.status < 400 ? 'UP' : 'DOWN'}
                     </p>
                   </div>
-                  <div className="text-sm">
+                  <div className="text-sm text-white">
                     Response Time: {result.responseTime}ms
                   </div>
                 </div>
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-2 text-sm text-gray-400">
                   Last checked: {new Date(result.timestamp).toLocaleString()}
                 </p>
               </div>
