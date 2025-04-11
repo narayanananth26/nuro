@@ -73,12 +73,12 @@ export async function checkDueUrls() {
         },
       ],
       // Exclude monitors with interval=0 (one-time checks) that have already been checked
-      $not: {
-        $and: [
-          { interval: 0 },
-          { lastChecked: { $ne: null } }
-        ]
-      }
+      $nor: [
+        { 
+          interval: 0,
+          lastChecked: { $ne: null }
+        }
+      ]
     });
 
     const checksPerformed = [];

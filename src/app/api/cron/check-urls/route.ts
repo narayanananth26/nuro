@@ -10,6 +10,8 @@ import { checkDueUrls } from "@/lib/monitor";
  * Format: Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request: NextRequest) {
+  console.log("API route handler executed");
+  
   // // Verify authorization
   // const authHeader = request.headers.get("Authorization");
   // const token = authHeader?.split(" ")[1];
@@ -25,10 +27,14 @@ export async function GET(request: NextRequest) {
   // }
 
   try {
+    console.log("Attempting to connect to database");
     await dbConnect();
+    console.log("Database connection successful");
     
     // Check all due URLs using the centralized logic in monitor.ts
+    console.log("Calling checkDueUrls()");
     const checksPerformed = await checkDueUrls();
+    console.log(`Checks performed: ${checksPerformed.length}`);
 
     return NextResponse.json({ 
       status: "success", 
