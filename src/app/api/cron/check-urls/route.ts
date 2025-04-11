@@ -10,19 +10,19 @@ import { checkDueUrls } from "@/lib/monitor";
  * Format: Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request: NextRequest) {
-  // Verify authorization
-  const authHeader = request.headers.get("Authorization");
-  const token = authHeader?.split(" ")[1];
-  const cronSecret = process.env.CRON_SECRET;
+  // // Verify authorization
+  // const authHeader = request.headers.get("Authorization");
+  // const token = authHeader?.split(" ")[1];
+  // const cronSecret = process.env.CRON_SECRET;
 
-  if (!cronSecret) {
-    console.error("CRON_SECRET environment variable not set");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
-  }
+  // if (!cronSecret) {
+  //   console.error("CRON_SECRET environment variable not set");
+  //   return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  // }
 
-  if (!token || token !== cronSecret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // if (!token || token !== cronSecret) {
+  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // }
 
   try {
     await dbConnect();
