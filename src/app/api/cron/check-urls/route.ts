@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { checkDueUrls } from "@/lib/monitor";
 
-export const runtime = 'nodejs';
-
 export async function GET(request: NextRequest) {
   console.log("API route handler executed");
   
