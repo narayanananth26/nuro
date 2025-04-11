@@ -44,11 +44,11 @@ export default function UrlHealthCheck() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-white">URL Health Monitor</h1>
+      <h1 className="text-xl font-bold mb-6 text-white uppercase w-fit mx-auto border-b border-[#E3CF20]">Monitor Websites</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="url" className="block text-sm font-medium mb-2 text-white">
-            Enter URL to check
+        <div className="flex-1 space-y-1">
+          <label htmlFor="url" className="block text-md font-medium text-white">
+            Website URL
           </label>
           <input
             type="url"
@@ -63,7 +63,7 @@ export default function UrlHealthCheck() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#E3CF20] text-[#121212] py-2 px-4 rounded-lg hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full font-medium bg-[#E3CF20] text-[#121212] py-2 px-4 rounded-lg hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed uppercase"
         >
           {loading ? 'Checking...' : 'Check Health'}
         </button>

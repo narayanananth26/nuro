@@ -29,14 +29,14 @@ export default function DeleteMonitorModal({ isOpen, onClose, monitor, onDelete 
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Delete Monitor">
-      <div className="space-y-4">
-        <p className="text-white">
+      <div className="space-y-4 font-[Fira_Sans]">
+        <p className="text-white text-start">
           Are you sure you want to delete the monitor for:
         </p>
         <p className="text-[#E3CF20] font-medium break-all">
           {monitor?.url}
         </p>
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-400 text-sm text-start">
           This action cannot be undone.
         </p>
         

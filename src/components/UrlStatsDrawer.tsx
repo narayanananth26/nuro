@@ -140,7 +140,7 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
   return (
     <div 
       ref={drawerRef}
-      className={`fixed top-[65px] bottom-0 right-0 bg-[#1E1E1E] shadow-xl transform transition-transform duration-300 border-l border-[#333333] ${
+      className={`font-[Fira_Sans] fixed top-[65px] bottom-0 right-0 bg-[#1E1E1E] shadow-xl transform transition-transform duration-300 border-l border-[#333333] ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ width: `${width}px` }}
@@ -156,7 +156,7 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
 
       <div className="h-full flex flex-col p-6 overflow-hidden">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-white">Monitor Stats</h2>
+          <h2 className="text-xl font-semibold text-white m-auto uppercase mt-8 border-b border-[#E3CF20]">Monitor Stats</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white"

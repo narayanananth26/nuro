@@ -17,15 +17,15 @@ export default async function DashboardPage() {
       <div className="dashboard-content">        
         <div className="space-y-8">
         <div className="bg-[#1E1E1E] border border-[#333333] rounded-lg shadow-md">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">Add New Website to Monitor</h2>
+          <div className="p-6 text-center">
+            <h2 className="text-xl font-semibold mb-8 text-white uppercase border-b border-[#E3CF20] w-fit mx-auto">Monitor Websites</h2>
             <UrlMonitorForm />
           </div>
         </div>
 
         <div className="bg-[#1E1E1E] border border-[#333333] rounded-lg shadow-md">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">Your Monitored Websites</h2>
+          <div className="p-6 text-center">
+            <h2 className="text-xl font-semibold mb-8 text-white uppercase border-b border-[#E3CF20] w-fit mx-auto">Your Monitored Websites</h2>
             <MonitorsTable />
           </div>
         </div>

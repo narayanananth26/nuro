@@ -51,7 +51,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black/30 font-[Fira_Sans]">
       <div 
         ref={modalRef}
         className="bg-[#1E1E1E] border border-[#333333] rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden"

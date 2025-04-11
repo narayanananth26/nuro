@@ -201,7 +201,7 @@ export default function HistoryPage() {
   return (
     <div className="history-container">
       <div className="history-content">
-        <h1 className="text-2xl font-bold mb-6 text-white">URL Monitoring History</h1>
+        <h1 className="text-2xl font-bold mb-6 text-white mx-auto uppercase border-b border-[#E3CF20] w-fit mt-8">URL Monitoring History</h1>
         
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-4">
@@ -251,14 +251,14 @@ export default function HistoryPage() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={exportAsCSV}
-                className="px-3 py-1 rounded bg-[#2D2D2D] text-white hover:bg-[#3D3D3D]"
+                className="px-3 py-1 rounded bg-[#2D2D2D] text-white hover:bg-[#E3CF20] hover:text-[#121212]"
                 title="Export as CSV"
               >
                 Export CSV
               </button>
               <button
                 onClick={exportAsJSON}
-                className="px-3 py-1 rounded bg-[#2D2D2D] text-white hover:bg-[#3D3D3D]"
+                className="px-3 py-1 rounded bg-[#2D2D2D] text-white hover:bg-[#E3CF20] hover:text-[#121212]"
                 title="Export as JSON"
               >
                 Export JSON
@@ -296,7 +296,7 @@ export default function HistoryPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-[#121212] divide-y divide-[#333333]">
+                <tbody className="bg-[#121212] divide-y divide-[#333333] font-[IBM_Plex_Mono]">
                   {paginatedLogs.map((log: MonitorLog, index: number) => (
                     <tr key={`${log.monitorId}-${log.timestamp}-${index}`} className="hover:bg-[#1E1E1E]">
                       <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate">

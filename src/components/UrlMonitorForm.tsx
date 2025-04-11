@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { usePaginationContext } from '@/contexts/PaginationContext';
 import { mutate } from 'swr';
+import { Trash2 } from 'lucide-react';
 
 interface HealthCheckResult {
   status: number;
@@ -234,11 +235,11 @@ export default function UrlMonitorForm() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 text-md">
         {urls.map((url, index) => (
           <div key={index} className="flex gap-4 items-end">
             <div className="flex-1">
-              <label htmlFor={`url-${index}`} className="block text-sm font-medium text-white">
+              <label htmlFor={`url-${index}`} className="block font-medium text-white text-start">
                 Website URL
               </label>
               <input
@@ -253,7 +254,7 @@ export default function UrlMonitorForm() {
             </div>
 
             <div className="flex-1">
-              <label htmlFor={`interval-${index}`} className="block text-sm font-medium text-white">
+              <label htmlFor={`interval-${index}`} className="block font-medium text-white text-start">
                 Check Interval
               </label>
               <select
@@ -275,12 +276,10 @@ export default function UrlMonitorForm() {
                 <button
                   type="button"
                   onClick={() => handleRemoveUrl(index)}
-                  className="text-red-400 hover:text-red-300 px-2 py-1 rounded-md border border-red-400 hover:bg-red-900 flex items-center justify-center w-10 h-10"
+                  className="text-red-400 hover:text-red-300 rounded-md flex items-center justify-center w-10 h-10"
                   aria-label="Remove URL"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <Trash2 size={20} strokeWidth={1.5} />
                 </button>
               )}
               {index === 0 && <div className="w-10 h-10"></div>}
@@ -292,7 +291,7 @@ export default function UrlMonitorForm() {
           <button
             type="button"
             onClick={handleAddUrl}
-            className="px-4 py-2 text-sm font-medium text-[#E3CF20] hover:text-[#d4c01c] border border-[#E3CF20] rounded-md hover:bg-[#2D2D2D] flex items-center justify-between"
+            className="px-4 py-2 text-md font-medium text-[#E3CF20] hover:text-[#d4c01c] border border-[#E3CF20] rounded-md hover:bg-[#2D2D2D] flex items-center justify-between"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <line x1="12" y1="5" x2="12" y2="19" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
@@ -303,7 +302,7 @@ export default function UrlMonitorForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 px-4 py-2 text-sm font-medium text-[#121212] bg-[#E3CF20] rounded-md hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-2 text-md font-medium text-[#121212] uppercase bg-[#E3CF20] rounded-md hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {session ? 'Save & Monitor' : 'Check Now'}
           </button>
@@ -319,17 +318,17 @@ export default function UrlMonitorForm() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h4 className="font-medium text-white">{result.originalUrl || url}</h4>
-                    <p className={`mt-1 text-sm ${
+                    <p className={`mt-1 text-md ${
                       result.status < 400 ? 'text-green-400' : 'text-red-400'
                     }`}>
                       Status: {result.status < 400 ? 'UP' : 'DOWN'}
                     </p>
                   </div>
-                  <div className="text-sm text-white">
+                  <div className="text-md text-white">
                     Response Time: {result.responseTime}ms
                   </div>
                 </div>
-                <p className="mt-2 text-sm text-gray-400">
+                <p className="mt-2 text-md text-gray-400">
                   Last checked: {new Date(result.timestamp).toLocaleString()}
                 </p>
               </div>

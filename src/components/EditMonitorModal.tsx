@@ -50,9 +50,9 @@ export default function EditMonitorModal({ isOpen, onClose, monitor, onSave }: E
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Monitor">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 font-[Fira_Sans]">
         <div>
-          <label htmlFor="url" className="block text-sm font-medium text-gray-300 mb-1">
+          <label htmlFor="url" className="block text-sm font-medium text-gray-300 mb-1 text-start">
             URL
           </label>
           <input
@@ -67,7 +67,7 @@ export default function EditMonitorModal({ isOpen, onClose, monitor, onSave }: E
         </div>
         
         <div>
-          <label htmlFor="interval" className="block text-sm font-medium text-gray-300 mb-1">
+          <label htmlFor="interval" className="block text-sm font-medium text-gray-300 mb-1 text-start">
             Check Interval
           </label>
           <select

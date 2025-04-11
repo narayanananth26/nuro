@@ -8,6 +8,7 @@ import { usePaginationContext } from '@/contexts/PaginationContext';
 import type { UrlMonitor, MonitorLog } from '@/types/monitor';
 import EditMonitorModal from './EditMonitorModal';
 import DeleteMonitorModal from './DeleteMonitorModal';
+import { BarChart2, Edit2, Trash2 } from 'lucide-react';
 
 type FilterStatus = 'ALL' | 'UP' | 'DOWN';
 const ITEMS_PER_PAGE = 5;
@@ -223,30 +224,30 @@ export default function MonitorsTable() {
             <table className="min-w-full divide-y divide-[#333333] table-fixed">
               <thead className="bg-[#1E1E1E]">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[250px]">
+                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[250px]">
                     URL
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
                     Status
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
+                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
                     Response Time
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[150px]">
+                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[150px]">
                     Last Checked
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
                     Interval
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th scope="col" className="px-6 py-3 text-right text-sm font-medium text-gray-400 uppercase tracking-wider w-[80px]">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-[#121212] divide-y divide-[#333333]">
+              <tbody className="bg-[#121212] divide-y divide-[#333333] font-[IBM_Plex_Mono]">
                 {paginatedMonitors.map((monitor) => (
                   <tr key={monitor._id} className="hover:bg-[#1E1E1E]">
-                    <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate">
+                    <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate text-start">
                       <a 
                         href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
                         target="_blank" 
@@ -296,28 +297,33 @@ export default function MonitorsTable() {
                       })()} 
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => setSelectedMonitor(monitor)}
-                        className="text-[#E3CF20] border border-[#E3CF20] px-3 py-1 rounded-md hover:text-[#F0E867] hover:bg-[#8F8412] mr-4 cursor-pointer"
-                      >
-                        View Stats
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setEditingMonitor(monitor);
-                        }}
-                        className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 mr-4 cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setDeleteMonitor(monitor);
-                        }}
-                        className="text-red-400 hover:text-red-300 px-2 py-1 rounded-md border border-red-400 hover:bg-red-900 cursor-pointer"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex flex-row items-center justify-end space-x-4">
+                        <button 
+                          onClick={() => setSelectedMonitor(monitor)}
+                          className="text-gray-400 hover:text-[#E3CF20] cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                          title="View Stats"
+                        >
+                          <BarChart2 size={20} strokeWidth={1.5} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingMonitor(monitor);
+                          }}
+                          className="text-gray-400 hover:text-green-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                          title="Edit Monitor"
+                        >
+                          <Edit2 size={20} strokeWidth={1.5} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteMonitor(monitor);
+                          }}
+                          className="text-gray-400 hover:text-red-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                          title="Delete Monitor"
+                        >
+                          <Trash2 size={20} strokeWidth={1.5} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
