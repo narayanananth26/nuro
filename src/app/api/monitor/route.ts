@@ -1,14 +1,8 @@
-import { startMonitoringJob } from "@/lib/monitor";
 import { NextResponse } from "next/server";
 
-// Initialize the monitoring job
-let isMonitoringStarted = false;
-
-if (!isMonitoringStarted) {
-  startMonitoringJob();
-  isMonitoringStarted = true;
-}
+// The monitoring job is now handled by an external scheduler
+// calling the /api/cron/check-urls endpoint
 
 export async function GET() {
-  return NextResponse.json({ status: "Monitoring service is running" });
+  return NextResponse.json({ status: "Monitoring service is available" });
 }

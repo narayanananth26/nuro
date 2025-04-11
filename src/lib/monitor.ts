@@ -1,4 +1,3 @@
-import cron from "node-cron";
 import UrlMonitor from "@/models/UrlMonitor";
 import { dbConnect } from "@/lib/mongodb";
 
@@ -39,7 +38,7 @@ async function logMonitorResult(monitor: any, status: "UP" | "DOWN" | "UNKNOWN",
   await monitor.save();
 }
 
-async function handlePing(monitor: any) {
+export async function handlePing(monitor: any) {
   const url = monitor.url;
   const retries = [5000, 10000, 20000]; // 5s, 10s, 20s
 
@@ -61,43 +60,46 @@ async function handlePing(monitor: any) {
   return logMonitorResult(monitor, "DOWN", null);
 }
 
-export function startMonitoringJob() {
-  // Run every minute
-  cron.schedule("* * * * *", async () => {
-    try {
-      await dbConnect();
-      
-      const now = new Date();
-      
-      // Fetch all monitors due for checking
-      const dueMonitors = await UrlMonitor.find({
-        $or: [
-          { lastChecked: null },
-          {
-            lastChecked: { 
-              $lte: new Date(now.getTime() - 60000) // At least 1 minute ago
-            }
-          },
-        ],
-      });
+export async function checkDueUrls() {
+  try {
+    await dbConnect();
+    
+    const now = new Date();
+    
+    // Fetch all monitors due for checking
+    const dueMonitors = await UrlMonitor.find({
+      $or: [
+        { lastChecked: null },
+        {
+          lastChecked: { 
+            $lte: new Date(now.getTime() - 60000) // At least 1 minute ago
+          }
+        },
+      ],
+    });
 
-      // Process each monitor
-      for (const monitor of dueMonitors) {
-        // Get interval from the most recent log or default to 5 minutes
-        const interval = monitor.logs.length > 0 ? monitor.logs[monitor.logs.length - 1].interval : 5;
-        
-        // Skip monitors with interval=0 (one-time checks)
-        if (interval === 0) continue;
-        
-        const intervalMs = interval * 60 * 1000;
-        const timeSinceLastCheck = now.getTime() - (monitor.lastChecked?.getTime() || 0);
+    const checksPerformed = [];
 
-        if (!monitor.lastChecked || timeSinceLastCheck >= intervalMs) {
-          await handlePing(monitor).catch(console.error);
-        }
+    // Process each monitor
+    for (const monitor of dueMonitors) {
+      // Get interval from the most recent log or default to 5 minutes
+      const interval = monitor.logs.length > 0 ? monitor.logs[monitor.logs.length - 1].interval : 5;
+      
+      // Skip monitors with interval=0 (one-time checks) that have already been checked
+      if (interval === 0 && monitor.lastChecked) continue;
+      
+      const intervalMs = interval * 60 * 1000;
+      const timeSinceLastCheck = now.getTime() - (monitor.lastChecked?.getTime() || 0);
+
+      if (!monitor.lastChecked || timeSinceLastCheck >= intervalMs) {
+        await handlePing(monitor).catch(console.error);
+        checksPerformed.push(monitor.url);
       }
-    } catch (error) {
-      console.error("Error in monitoring job:", error);
     }
-  });
+
+    return checksPerformed;
+  } catch (error) {
+    console.error("Error in URL monitoring:", error);
+    throw error;
+  }
 }
