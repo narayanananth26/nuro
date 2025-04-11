@@ -16,12 +16,15 @@ async function attemptPing(url: string): Promise<{ success: boolean; responseTim
 
 async function logMonitorResult(monitor: any, status: "UP" | "DOWN" | "UNKNOWN", responseTime: number | null) {
   const now = new Date();
+  
+  // Get interval from the most recent log or default to 5
+  const interval = monitor.logs.length > 0 ? monitor.logs[monitor.logs.length - 1].interval : 5;
 
   monitor.logs.push({
     timestamp: now,
     status,
     responseTime: responseTime || 0,
-    interval: monitor.interval
+    interval: interval
   });
 
   // Keep only last 1000 logs to prevent document size issues
@@ -80,7 +83,13 @@ export function startMonitoringJob() {
 
       // Process each monitor
       for (const monitor of dueMonitors) {
-        const intervalMs = monitor.interval * 60 * 1000;
+        // Get interval from the most recent log or default to 5 minutes
+        const interval = monitor.logs.length > 0 ? monitor.logs[monitor.logs.length - 1].interval : 5;
+        
+        // Skip monitors with interval=0 (one-time checks)
+        if (interval === 0) continue;
+        
+        const intervalMs = interval * 60 * 1000;
         const timeSinceLastCheck = now.getTime() - (monitor.lastChecked?.getTime() || 0);
 
         if (!monitor.lastChecked || timeSinceLastCheck >= intervalMs) {

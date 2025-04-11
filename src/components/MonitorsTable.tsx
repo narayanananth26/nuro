@@ -276,13 +276,10 @@ export default function MonitorsTable() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px]">
                         {(() => {
-                          // Ensure interval is a valid number
-                          // Force conversion to number to handle string values from API
-                          const intervalValue = monitor.interval;
-                          const interval = Number(intervalValue);
+                          // Get interval from the log entry
+                          const interval = log.interval;
                           
                           // Special case for 'once' (interval = 0)
-                          // Use strict equality with 0 after conversion
                           if (interval === 0) {
                             return 'Once';
                           }
@@ -318,6 +315,7 @@ export default function MonitorsTable() {
                               onChange={(e) => setEditInterval(Number(e.target.value))}
                               className="text-sm hover:border-[#E3CF20] custom-select min-w-[100px] w-[100px]"
                             >
+                              <option value="0">Once</option>
                               <option value="5">5m</option>
                               <option value="10">10m</option>
                               <option value="30">30m</option>
@@ -342,7 +340,11 @@ export default function MonitorsTable() {
                               onClick={() => {
                                 setEditingMonitor(monitor);
                                 setEditUrl(monitor.url);
-                                setEditInterval(monitor.interval);
+                                // Get interval from the most recent log
+                                const latestLog = monitor.logs.length > 0 
+                                  ? monitor.logs[monitor.logs.length - 1] 
+                                  : { interval: 5 };
+                                setEditInterval(latestLog.interval);
                               }}
                               className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 mr-4 cursor-pointer"
                             >

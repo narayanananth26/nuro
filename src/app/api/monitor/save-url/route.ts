@@ -64,14 +64,6 @@ export async function POST(request: Request) {
       monitor.logs = monitor.logs || [];
       monitor.logs.push(logEntry);
       
-      // Update interval if provided
-      if (typeof interval === 'number' && interval >= 0) {
-        console.log('Updating interval to:', interval);
-        monitor.interval = interval;
-      } else {
-        console.log('Not updating interval, invalid value:', interval);
-      }
-
       // Keep only last 1000 logs
       if (monitor.logs.length > 1000) {
         monitor.logs = monitor.logs.slice(-1000);
@@ -81,13 +73,9 @@ export async function POST(request: Request) {
       console.log('Updated monitor:', monitor);
     } else {
       // Create new monitor
-      const intervalValue = typeof interval === 'number' && interval >= 0 ? interval : 5;
-      console.log('Creating new monitor with interval:', intervalValue);
-      
       monitor = await UrlMonitor.create({
         userId: new mongoose.Types.ObjectId(session.user.id),
         url,
-        interval: intervalValue,
         logs: [logEntry]
       });
       

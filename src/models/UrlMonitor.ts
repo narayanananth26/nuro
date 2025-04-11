@@ -30,11 +30,6 @@ const UrlMonitorSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  interval: {
-    type: Number,
-    required: true,
-    default: 5 // Default to 5 minutes
-  },
   logs: [LogSchema]
 }, {
   timestamps: true,
