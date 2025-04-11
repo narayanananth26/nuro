@@ -25,6 +25,16 @@ export async function POST(request: Request) {
 
     await dbConnect();
 
+    // Check if monitor already exists for this user and URL
+    const existingMonitor = await UrlMonitor.findOne({
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      url: url
+    });
+    
+    if (existingMonitor) {
+      return NextResponse.json({ error: 'This URL is already being monitored' }, { status: 409 });
+    }
+
     // Check if URL is reachable
     const startTime = Date.now();
     let healthCheck;
@@ -42,45 +52,26 @@ export async function POST(request: Request) {
       };
     }
 
-    // Create log entry first to validate it
+    // Create log entry
     const logEntry = {
       timestamp: new Date(),
       status: healthCheck.status < 400 ? "UP" : "DOWN",
-      responseTime: healthCheck.responseTime,
-      interval: interval
+      responseTime: healthCheck.responseTime
     };
     console.log('Created log entry:', logEntry);
 
-    // Check if monitor already exists for this user and URL
-    let monitor = await UrlMonitor.findOne({
+    // Create new monitor
+    const monitor = await UrlMonitor.create({
       userId: new mongoose.Types.ObjectId(session.user.id),
-      url: url
+      url,
+      interval,
+      status: healthCheck.status < 400 ? "UP" : "DOWN",
+      responseTime: healthCheck.responseTime,
+      lastChecked: new Date(),
+      logs: [logEntry]
     });
     
-    console.log('Existing monitor found:', monitor ? 'Yes' : 'No');
-
-    if (monitor) {
-      // Update existing monitor
-      monitor.logs = monitor.logs || [];
-      monitor.logs.push(logEntry);
-      
-      // Keep only last 1000 logs
-      if (monitor.logs.length > 1000) {
-        monitor.logs = monitor.logs.slice(-1000);
-      }
-
-      monitor = await monitor.save();
-      console.log('Updated monitor:', monitor);
-    } else {
-      // Create new monitor
-      monitor = await UrlMonitor.create({
-        userId: new mongoose.Types.ObjectId(session.user.id),
-        url,
-        logs: [logEntry]
-      });
-      
-      console.log('Created new monitor:', monitor);
-    }
+    console.log('Created new monitor:', monitor);
 
     return NextResponse.json(monitor);
   } catch (error) {

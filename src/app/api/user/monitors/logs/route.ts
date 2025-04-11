@@ -5,6 +5,37 @@ import UrlMonitor from '@/models/UrlMonitor';
 import mongoose from 'mongoose';
 import { dbConnect } from '@/lib/mongodb';
 
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await dbConnect();
+
+    // Fetch all monitors for the user
+    const monitors = await UrlMonitor.find({ 
+      userId: new mongoose.Types.ObjectId(session.user.id) 
+    });
+
+    // Extract all logs from all monitors and add URL and monitor ID information
+    const allLogs = monitors.flatMap(monitor => 
+      monitor.logs.map((log: any) => ({
+        ...log.toObject(),
+        url: monitor.url,
+        monitorId: monitor._id,
+        monitorInterval: monitor.interval
+      }))
+    ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    return NextResponse.json(allLogs);
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions);

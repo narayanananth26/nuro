@@ -13,10 +13,6 @@ const LogSchema = new mongoose.Schema({
   responseTime: {
     type: Number,
     required: true,
-  },
-  interval: {
-    type: Number,
-    required: true,
   }
 });
 
@@ -29,6 +25,24 @@ const UrlMonitorSchema = new mongoose.Schema({
   url: {
     type: String,
     required: true,
+  },
+  interval: {
+    type: Number,
+    required: true,
+    default: 5
+  },
+  lastChecked: {
+    type: Date,
+    default: null
+  },
+  status: {
+    type: String,
+    enum: ["UP", "DOWN", "UNKNOWN"],
+    default: "UNKNOWN"
+  },
+  responseTime: {
+    type: Number,
+    default: null
   },
   logs: [LogSchema]
 }, {

@@ -1,60 +1,71 @@
 'use client';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
+import { useState, useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import useSWR from 'swr';
 import { toast } from 'react-hot-toast';
-import UrlStatsDrawer from './UrlStatsDrawer';
-import { usePaginationContext } from '@/contexts/PaginationContext';
-import type { UrlMonitor, MonitorLog } from '@/types/monitor';
-import EditMonitorModal from './EditMonitorModal';
-import DeleteMonitorModal from './DeleteMonitorModal';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+
+interface MonitorLog {
+  _id: string;
+  timestamp: string;
+  status: string;
+  responseTime: number;
+  url: string;
+  monitorId: string;
+  monitorInterval: number;
+}
 
 type FilterStatus = 'ALL' | 'UP' | 'DOWN';
-const ITEMS_PER_PAGE = 5;
-const MONITORS_KEY = '/api/user/monitors';
+const ITEMS_PER_PAGE = 10;
+const HISTORY_KEY = '/api/user/monitors/logs';
 
 const fetcher = (url: string) => fetch(url).then(res => {
-  if (!res.ok) throw new Error('Failed to fetch monitors');
+  if (!res.ok) throw new Error('Failed to fetch logs');
   return res.json();
 });
 
-export default function MonitorsTable() {
-  // All state hooks at the top
+export default function HistoryPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
-  const [selectedMonitor, setSelectedMonitor] = useState<UrlMonitor | null>(null);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
-  const [editingMonitor, setEditingMonitor] = useState<UrlMonitor | null>(null);
-  const [deleteMonitor, setDeleteMonitor] = useState<UrlMonitor | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [drawerWidth, setDrawerWidth] = useState(600);
-  
-  // Get the pagination context
-  const { monitorsPaginationResetTrigger } = usePaginationContext();
 
-  const { data: monitors, error, mutate: refreshMonitors } = useSWR<UrlMonitor[]>(MONITORS_KEY, fetcher, {
-    refreshInterval: 60000,
-    revalidateOnFocus: true,
-    revalidateOnMount: true
-  });
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
 
-  // Filter monitors based on status
-  const filteredMonitors = useMemo(() => {
-    if (!monitors) return [];
-    
-    return filterStatus === 'ALL' 
-      ? monitors 
-      : monitors.filter(monitor => monitor.status === filterStatus);
-  }, [monitors, filterStatus]);
-
-  const totalPages = useMemo(() => 
-    Math.ceil(filteredMonitors.length / ITEMS_PER_PAGE),
-    [filteredMonitors.length]
+  const { data: logs, error, mutate: refreshLogs } = useSWR<MonitorLog[]>(
+    status === 'authenticated' ? HISTORY_KEY : null,
+    fetcher,
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: true,
+      revalidateOnMount: true
+    }
   );
 
-  const paginatedMonitors = useMemo(() => {
+  const filteredLogs = useMemo(() => {
+    if (!logs) return [];
+    
+    return filterStatus === 'ALL' 
+      ? logs 
+      : logs.filter((log: MonitorLog) => log.status === filterStatus);
+  }, [logs, filterStatus]);
+
+  const totalPages = useMemo(() => 
+    Math.ceil(filteredLogs.length / ITEMS_PER_PAGE),
+    [filteredLogs.length]
+  );
+
+  const paginatedLogs = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredMonitors.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredMonitors, currentPage]);
+    return filteredLogs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredLogs, currentPage]);
 
   // Pagination UI helper
   const getPageNumbers = useMemo(() => {
@@ -87,97 +98,45 @@ export default function MonitorsTable() {
     return pageNumbers;
   }, [currentPage, totalPages]);
 
-  // Effects
+  // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filterStatus]);
-  
-  // Reset to page 1 when a new URL is checked
-  useEffect(() => {
-    if (monitorsPaginationResetTrigger > 0) {
-      setCurrentPage(1);
-    }
-  }, [monitorsPaginationResetTrigger]);
 
+  // Ensure current page is valid
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(Math.max(1, totalPages));
     }
   }, [currentPage, totalPages]);
 
-  // Event handlers
-  const handleEdit = useCallback(async (url: string, interval: number) => {
-    if (!editingMonitor) return;
-    
-    try {
-      const response = await fetch(`/api/user/monitors`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: editingMonitor._id,
-          url,
-          interval,
-        }),
-      });
+  if (status === 'loading') {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
-      if (!response.ok) throw new Error('Failed to update monitor');
-
-      toast.success('Monitor updated successfully');
-      refreshMonitors();
-      setEditingMonitor(null);
-    } catch (error) {
-      console.error('Error updating monitor:', error);
-      toast.error('Failed to update monitor');
-    }
-  }, [editingMonitor, refreshMonitors]);
-
-  const handleDelete = useCallback(async () => {
-    if (!deleteMonitor) return;
-    
-    try {
-      const response = await fetch(`/api/user/monitors?id=${deleteMonitor._id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete monitor');
-      
-      const result = await response.json();
-      toast.success(result.message || 'Monitor deleted successfully');
-      refreshMonitors();
-      setDeleteMonitor(null);
-    } catch (error) {
-      console.error('Error deleting monitor:', error);
-      toast.error('Failed to delete monitor');
-    }
-  }, [deleteMonitor, refreshMonitors]);
-
-  if (error) return <div className="text-red-500">Failed to load monitors</div>;
-  if (!monitors) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">Failed to load history logs</div>;
+  if (!logs) return <div>Loading logs...</div>;
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
   return (
-    <div className="flex flex-col">
-      <div 
-        className={`flex flex-col transition-all duration-300 ${
-          selectedMonitor ? 'mr-[' + drawerWidth + 'px]' : ''
-        }`}
-      >
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6 text-white">URL Monitoring History</h1>
+      
+      <div className="flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
             <button
               onClick={async () => {
                 try {
-                  await refreshMonitors();
-                  toast.success('Monitors refreshed successfully');
+                  await refreshLogs();
+                  toast.success('History refreshed successfully');
                 } catch (error) {
-                  toast.error('Failed to refresh monitors');
+                  toast.error('Failed to refresh history');
                 }
               }}
               className="p-2 rounded-full hover:bg-[#2D2D2D] text-[#E3CF20]"
-              title="Refresh monitors"
+              title="Refresh history"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -210,13 +169,13 @@ export default function MonitorsTable() {
           </div>
         </div>
 
-        {monitors.length === 0 ? (
+        {logs.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
-            No monitors found. Add a URL to start monitoring.
+            No history logs found.
           </div>
-        ) : filteredMonitors.length === 0 ? (
+        ) : filteredLogs.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
-            No monitors found for the selected filter.
+            No logs found for the selected filter.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -233,52 +192,46 @@ export default function MonitorsTable() {
                     Response Time
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[150px]">
-                    Last Checked
+                    Timestamp
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[100px]">
                     Interval
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-[#121212] divide-y divide-[#333333]">
-                {paginatedMonitors.map((monitor) => (
-                  <tr key={monitor._id} className="hover:bg-[#1E1E1E]">
+                {paginatedLogs.map((log: MonitorLog, index: number) => (
+                  <tr key={`${log.monitorId}-${log.timestamp}-${index}`} className="hover:bg-[#1E1E1E]">
                     <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate">
                       <a 
-                        href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
+                        href={log.url.startsWith('http') ? log.url : `https://${log.url}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="hover:text-[#E3CF20] hover:underline"
-                        title={monitor.url}
+                        title={log.url}
                       >
-                        {monitor.url}
+                        {log.url}
                       </a>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px]">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        monitor.status === 'UP' 
+                        log.status === 'UP' 
                           ? 'bg-green-900 text-green-300'
                           : 'bg-red-900 text-red-300'
                       }`}>
-                        {monitor.status}
+                        {log.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px]">
-                      {monitor.responseTime ? `${monitor.responseTime}ms` : 'N/A'}
+                      {log.responseTime}ms
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px]">
-                      {monitor.lastChecked 
-                        ? formatDistanceToNow(new Date(monitor.lastChecked), { addSuffix: true })
-                        : 'Never'
-                      }
+                      {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px]">
                       {(() => {
                         // Get interval from the monitor
-                        const interval = monitor.interval;
+                        const interval = log.monitorInterval;
                         
                         // Special case for 'once' (interval = 0)
                         if (interval === 0) {
@@ -295,30 +248,6 @@ export default function MonitorsTable() {
                           : `${Math.floor(interval / 60)}h`;
                       })()} 
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => setSelectedMonitor(monitor)}
-                        className="text-[#E3CF20] border border-[#E3CF20] px-3 py-1 rounded-md hover:text-[#F0E867] hover:bg-[#8F8412] mr-4 cursor-pointer"
-                      >
-                        View Stats
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setEditingMonitor(monitor);
-                        }}
-                        className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 mr-4 cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setDeleteMonitor(monitor);
-                        }}
-                        className="text-red-400 hover:text-red-300 px-2 py-1 rounded-md border border-red-400 hover:bg-red-900 cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -327,12 +256,12 @@ export default function MonitorsTable() {
         )}
 
         {/* Pagination */}
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-sm text-gray-400">
-            Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredMonitors.length)} of {filteredMonitors.length} monitors
-          </div>
-          
-          {totalPages > 1 && (
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-4">
+            <div className="text-sm text-gray-400">
+              Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} logs
+            </div>
+            
             <div className="flex items-center space-x-2">
               {/* Left Arrow */}
               <button
@@ -381,41 +310,9 @@ export default function MonitorsTable() {
                 </svg>
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* URL Stats Drawer */}
-      {selectedMonitor && (
-        <UrlStatsDrawer 
-          monitor={selectedMonitor} 
-          onClose={() => setSelectedMonitor(null)}
-          timeRange={timeRange}
-          onTimeRangeChange={setTimeRange}
-          width={drawerWidth}
-          onWidthChange={setDrawerWidth}
-        />
-      )}
-
-      {/* Edit Monitor Modal */}
-      {editingMonitor && (
-        <EditMonitorModal
-          isOpen={true}
-          monitor={editingMonitor}
-          onClose={() => setEditingMonitor(null)}
-          onSave={handleEdit}
-        />
-      )}
-
-      {/* Delete Monitor Modal */}
-      {deleteMonitor && (
-        <DeleteMonitorModal
-          isOpen={true}
-          monitor={deleteMonitor}
-          onClose={() => setDeleteMonitor(null)}
-          onDelete={handleDelete}
-        />
-      )}
     </div>
   );
 }

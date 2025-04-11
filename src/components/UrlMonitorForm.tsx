@@ -131,13 +131,6 @@ export default function UrlMonitorForm() {
         try {
           // First check the URL
           await checkUrl(urlData);
-          successCount++;
-          
-          // Update progress toast
-          toast.loading(
-            `Processed ${successCount + errorCount}/${urls.length} URLs (${successCount} successful, ${errorCount} failed)`,
-            { id: toastId }
-          );
           
           // Then save it if user is logged in
           if (session) {
@@ -181,13 +174,31 @@ export default function UrlMonitorForm() {
             console.log('API response:', responseData);
             
             if (response.ok) {
+              successCount++;
               // Reset pagination to page 1 when a new URL is saved
               resetMonitorsPagination();
               
               // Refresh the monitors list
               mutate('/api/user/monitors');
+            } else {
+              // Check if the error is because the URL is already being monitored
+              if (response.status === 409) {
+                toast.error(`URL ${urlData.url} is already being monitored`);
+                errorCount++;
+              } else {
+                throw new Error(responseData.error || 'Failed to save URL');
+              }
             }
+          } else {
+            // For non-logged in users, just count the successful health check
+            successCount++;
           }
+          
+          // Update progress toast
+          toast.loading(
+            `Processed ${successCount + errorCount}/${urls.length} URLs (${successCount} successful, ${errorCount} failed)`,
+            { id: toastId }
+          );
         } catch (error) {
           console.error(`Error processing URL ${urlData.url}:`, error);
           errorCount++;
@@ -200,23 +211,22 @@ export default function UrlMonitorForm() {
         }
       }
       
-      // Show final success/error toast
+      // Update the final toast based on results
       if (errorCount === 0) {
-        toast.success(
-          `Successfully processed ${urls.length >  1 ? 'all' : 'the'} ${urls.length > 1 ? urls.length : ''} URL${urls.length > 1 ? 's' : ''}${session ? ' and saved to your account' : ''}`,
-          { id: toastId, duration: 5000 }
-        );
+        toast.success(`Successfully processed ${successCount} URL${successCount !== 1 ? 's' : ''}`, { id: toastId });
       } else if (successCount === 0) {
-        toast.error(
-          `Failed to process all URLs. Please try again.`,
-          { id: toastId, duration: 5000 }
-        );
+        toast.error(`Failed to process all ${errorCount} URL${errorCount !== 1 ? 's' : ''}`, { id: toastId });
       } else {
-        toast.success(
-          `Processed ${urls.length} URL${urls.length > 1 ? 's' : ''}: ${successCount} successful, ${errorCount} failed`,
-          { id: toastId, duration: 5000 }
-        );
+        toast.success(`Processed ${successCount + errorCount} URL${successCount + errorCount !== 1 ? 's' : ''} (${successCount} successful, ${errorCount} failed)`, { id: toastId });
       }
+      
+      // Reset the form if all URLs were successful
+      if (errorCount === 0) {
+        setUrls([{ url: '', interval: '5m' }]);
+      }
+    } catch (error) {
+      console.error('Error submitting URLs:', error);
+      toast.error('An unexpected error occurred', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
