@@ -2,7 +2,7 @@ import { NextAuthOptions, DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import User from "@/models/User";
-import dbConnect from "@/lib/dbConnect";
+import { dbConnect } from "@/lib/mongodb";
 import { JWT } from "next-auth/jwt";
 
 // Extend the built-in session types

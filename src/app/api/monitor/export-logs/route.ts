@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import UrlMonitor from '@/models/UrlMonitor';
-import dbConnect from '@/lib/dbConnect';
+import { dbConnect } from '@/lib/mongodb';
 import { Parser } from 'json2csv';
 import { MonitorLog } from '@/types/monitor';
 

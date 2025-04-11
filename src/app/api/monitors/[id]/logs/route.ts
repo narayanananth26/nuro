@@ -3,17 +3,19 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { subDays } from 'date-fns';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '7d';
     const days = timeRange === '30d' ? 30 : 7;
 
     const db = await connectToDatabase();
     const collection = db.collection('UrlMonitor');
+    const paramsData = await params;
+    const id = paramsData.id;
 
     const monitor = await collection.findOne({
-      _id: new ObjectId(params.id)
+      _id: new ObjectId(id)
     });
 
     if (!monitor) {

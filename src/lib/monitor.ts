@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import UrlMonitor from "@/models/UrlMonitor";
-import dbConnect from "@/lib/dbConnect";
+import { dbConnect } from "@/lib/mongodb";
 
 async function attemptPing(url: string): Promise<{ success: boolean; responseTime?: number }> {
   try {

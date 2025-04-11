@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import UrlMonitor from '@/models/UrlMonitor';
 import mongoose from 'mongoose';
-import dbConnect from '@/lib/dbConnect';
+import { dbConnect } from '@/lib/mongodb';
 
 export async function GET() {
   try {

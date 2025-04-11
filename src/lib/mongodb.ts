@@ -1,12 +1,14 @@
 import { MongoClient } from 'mongodb';
+import mongoose from 'mongoose';
 
-if (!process.env.MONGODB_URI) {
+if (!process.env.MONGO_URI) {
   throw new Error('Please add your Mongo URI to .env.local');
 }
 
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGO_URI;
 const options = {};
 
+// Native MongoDB Driver Connection
 let client;
 let clientPromise: Promise<MongoClient>;
 
@@ -28,8 +30,18 @@ if (process.env.NODE_ENV === 'development') {
   clientPromise = client.connect();
 }
 
+// Native MongoDB connection function
 export const connectToDatabase = async () => {
   const client = await clientPromise;
   const db = client.db();
   return db;
 };
+
+// Mongoose Connection
+export const dbConnect = async () => {
+  if (mongoose.connection.readyState >= 1) return;
+  await mongoose.connect(uri);
+};
+
+// Export clientPromise for NextAuth
+export default clientPromise;
