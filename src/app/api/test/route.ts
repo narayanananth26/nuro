@@ -1,3 +1,5 @@
 export async function GET() {
-    return new Response('Hello');
-}
+    console.log("Hello world");
+    return new Response("Logged 'Hello world' to console");
+  }
+  
