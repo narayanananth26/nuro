@@ -22,8 +22,8 @@ export default async function middleware(req: NextRequestWithAuth) {
     return null;
   }
 
-  // Redirect non-authenticated users from dashboard to login
-  if (!isAuth && req.nextUrl.pathname.startsWith('/dashboard')) {
+  // Redirect non-authenticated users from dashboard or history to login
+  if (!isAuth && (req.nextUrl.pathname.startsWith('/dashboard') || req.nextUrl.pathname.startsWith('/history'))) {
     return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 
@@ -31,5 +31,5 @@ export default async function middleware(req: NextRequestWithAuth) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/auth/login', '/auth/register'],
+  matcher: ['/dashboard/:path*', '/history/:path*', '/auth/login', '/auth/register'],
 };

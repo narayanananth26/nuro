@@ -29,6 +29,12 @@ export default function Navigation() {
                 >
                   Dashboard
                 </Link>
+                <Link
+                  href="/history"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-[#E3CF20] hover:bg-[#2D2D2D]"
+                >
+                  History
+                </Link>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="px-3 py-2 rounded-md text-sm font-medium text-[#121212] bg-[#E3CF20] hover:bg-[#d4c01c]"
