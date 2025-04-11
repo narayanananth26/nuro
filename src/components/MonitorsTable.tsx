@@ -6,6 +6,8 @@ import { toast } from 'react-hot-toast';
 import UrlStatsDrawer from './UrlStatsDrawer';
 import { usePaginationContext } from '@/contexts/PaginationContext';
 import type { UrlMonitor, MonitorLog } from '@/types/monitor';
+import EditMonitorModal from './EditMonitorModal';
+import DeleteMonitorModal from './DeleteMonitorModal';
 
 type FilterStatus = 'ALL' | 'UP' | 'DOWN';
 const ITEMS_PER_PAGE = 5;
@@ -22,8 +24,7 @@ export default function MonitorsTable() {
   const [selectedMonitor, setSelectedMonitor] = useState<UrlMonitor | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
   const [editingMonitor, setEditingMonitor] = useState<UrlMonitor | null>(null);
-  const [editUrl, setEditUrl] = useState('');
-  const [editInterval, setEditInterval] = useState<number>(0);
+  const [deleteMonitor, setDeleteMonitor] = useState<UrlMonitor | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerWidth, setDrawerWidth] = useState(600);
   
@@ -114,42 +115,52 @@ export default function MonitorsTable() {
   }, [currentPage, totalPages]);
 
   // Event handlers
-  const handleEdit = useCallback(async (monitor: UrlMonitor) => {
+  const handleEdit = useCallback(async (url: string, interval: number) => {
+    if (!editingMonitor) return;
+    
     try {
-      const response = await fetch(`/api/monitor/save-url`, {
+      const response = await fetch(`/api/user/monitors`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: monitor._id,
-          url: editUrl,
-          interval: editInterval,
+          id: editingMonitor._id,
+          url,
+          interval,
         }),
       });
 
       if (!response.ok) throw new Error('Failed to update monitor');
 
+      toast.success('Monitor updated successfully');
       refreshMonitors();
       setEditingMonitor(null);
     } catch (error) {
       console.error('Error updating monitor:', error);
+      toast.error('Failed to update monitor');
     }
-  }, [editUrl, editInterval, refreshMonitors]);
+  }, [editingMonitor, refreshMonitors]);
 
-  const handleDelete = useCallback(async (id: string) => {
+  const handleDelete = useCallback(async () => {
+    if (!deleteMonitor) return;
+    
     try {
-      const response = await fetch(`/api/user/monitors?id=${id}`, {
+      const response = await fetch(`/api/user/monitors?id=${deleteMonitor._id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('Failed to delete monitor');
-
+      
+      const result = await response.json();
+      toast.success(result.message || 'Monitor deleted successfully');
       refreshMonitors();
+      setDeleteMonitor(null);
     } catch (error) {
       console.error('Error deleting monitor:', error);
+      toast.error('Failed to delete monitor');
     }
-  }, [refreshMonitors]);
+  }, [deleteMonitor, refreshMonitors]);
 
   if (error) return <div className="text-red-500">Failed to load monitors</div>;
   if (!monitors) return <div>Loading...</div>;
@@ -301,67 +312,22 @@ export default function MonitorsTable() {
                         >
                           View Stats
                         </button>
-                        {editingMonitor?._id === monitor._id ? (
-                          <div className="flex items-center space-x-2">
-                            <input 
-                              type="url" 
-                              value={editUrl} 
-                              onChange={(e) => setEditUrl(e.target.value)}
-                              className="w-40 text-sm hover:border-[#E3CF20]"
-                              placeholder="URL"
-                            />
-                            <select 
-                              value={editInterval} 
-                              onChange={(e) => setEditInterval(Number(e.target.value))}
-                              className="text-sm hover:border-[#E3CF20] custom-select min-w-[100px] w-[100px]"
-                            >
-                              <option value="0">Once</option>
-                              <option value="5">5m</option>
-                              <option value="10">10m</option>
-                              <option value="30">30m</option>
-                              <option value="60">1h</option>
-                            </select>
-                            <button 
-                              onClick={() => handleEdit(monitor)}
-                              className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 cursor-pointer"
-                            >
-                              Save
-                            </button>
-                            <button 
-                              onClick={() => setEditingMonitor(null)}
-                              className="text-gray-400 hover:text-gray-300 px-2 py-1 rounded-md border border-gray-400 hover:bg-gray-700 ml-2 cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <button 
-                              onClick={() => {
-                                setEditingMonitor(monitor);
-                                setEditUrl(monitor.url);
-                                // Get interval from the most recent log
-                                const latestLog = monitor.logs.length > 0 
-                                  ? monitor.logs[monitor.logs.length - 1] 
-                                  : { interval: 5 };
-                                setEditInterval(latestLog.interval);
-                              }}
-                              className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 mr-4 cursor-pointer"
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => {
-                                if (window.confirm(`Are you sure you want to delete ${monitor.url}?`)) {
-                                  handleDelete(monitor._id);
-                                }
-                              }}
-                              className="text-red-400 hover:text-red-300 px-2 py-1 rounded-md border border-red-400 hover:bg-red-900 cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
+                        <button 
+                          onClick={() => {
+                            setEditingMonitor(monitor);
+                          }}
+                          className="text-green-400 hover:text-green-300 px-2 py-1 rounded-md border border-green-400 hover:bg-green-900 mr-4 cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setDeleteMonitor(monitor);
+                          }}
+                          className="text-red-400 hover:text-red-300 px-2 py-1 rounded-md border border-red-400 hover:bg-red-900 cursor-pointer"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   );
@@ -435,6 +401,22 @@ export default function MonitorsTable() {
           width={drawerWidth}
         />
       )}
+
+      {/* Edit Monitor Modal */}
+      <EditMonitorModal
+        isOpen={!!editingMonitor}
+        onClose={() => setEditingMonitor(null)}
+        monitor={editingMonitor}
+        onSave={handleEdit}
+      />
+
+      {/* Delete Monitor Modal */}
+      <DeleteMonitorModal
+        isOpen={!!deleteMonitor}
+        onClose={() => setDeleteMonitor(null)}
+        monitor={deleteMonitor}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

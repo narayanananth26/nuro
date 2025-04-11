@@ -7,6 +7,7 @@ export interface UrlMonitor {
 }
 
 export type MonitorLog = {
+  _id?: string;
   timestamp: string;
   status: string;
   responseTime: number;
