@@ -36,6 +36,55 @@ export async function GET(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await dbConnect();
+    const body = await request.json();
+    const { monitorId, status, responseTime, timestamp } = body;
+
+    if (!monitorId || !status || !responseTime) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Find the monitor and update it with the new log
+    const monitor = await UrlMonitor.findOneAndUpdate(
+      { 
+        _id: new mongoose.Types.ObjectId(monitorId),
+        userId: new mongoose.Types.ObjectId(session.user.id)
+      },
+      { 
+        $push: { 
+          logs: { 
+            timestamp: timestamp || new Date(),
+            status,
+            responseTime 
+          } 
+        },
+        $set: {
+          status,
+          responseTime,
+          lastChecked: timestamp || new Date()
+        }
+      },
+      { new: true }
+    );
+
+    if (!monitor) {
+      return NextResponse.json({ error: 'Monitor not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, monitor });
+  } catch (error) {
+    console.error('Error updating monitor logs:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions);

@@ -8,7 +8,7 @@ import { usePaginationContext } from '@/contexts/PaginationContext';
 import type { UrlMonitor, MonitorLog } from '@/types/monitor';
 import EditMonitorModal from './EditMonitorModal';
 import DeleteMonitorModal from './DeleteMonitorModal';
-import { BarChart2, Edit2, Trash2 } from 'lucide-react';
+import { BarChart2, Edit2, Trash2, RefreshCw } from 'lucide-react';
 
 type FilterStatus = 'ALL' | 'UP' | 'DOWN';
 const ITEMS_PER_PAGE = 5;
@@ -136,23 +136,70 @@ export default function MonitorsTable() {
 
   const handleDelete = useCallback(async () => {
     if (!deleteMonitor) return;
-    
     try {
       const response = await fetch(`/api/user/monitors?id=${deleteMonitor._id}`, {
         method: 'DELETE',
       });
-
-      if (!response.ok) throw new Error('Failed to delete monitor');
       
-      const result = await response.json();
-      toast.success(result.message || 'Monitor deleted successfully');
+      if (!response.ok) {
+        throw new Error('Failed to delete monitor');
+      }
+      
+      toast.success('Monitor deleted successfully');
       refreshMonitors();
       setDeleteMonitor(null);
     } catch (error) {
       console.error('Error deleting monitor:', error);
       toast.error('Failed to delete monitor');
     }
-  }, [deleteMonitor, refreshMonitors]);
+  }, [refreshMonitors]);
+
+  const handleCheckAgain = useCallback(async (monitor: UrlMonitor) => {
+    try {
+      toast.loading(`Checking ${monitor.url}...`);
+      
+      // First check the URL
+      const checkResponse = await fetch('/api/monitor/check-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: monitor.url }),
+      });
+      
+      if (!checkResponse.ok) {
+        throw new Error('Failed to check URL');
+      }
+      
+      const checkResult = await checkResponse.json();
+      
+      // Now update the monitor with the check result
+      const updateResponse = await fetch(`/api/user/monitors/logs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          monitorId: monitor._id,
+          status: checkResult.status >= 200 && checkResult.status < 400 ? 'UP' : 'DOWN',
+          responseTime: checkResult.responseTime,
+          timestamp: checkResult.timestamp,
+        }),
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update monitor logs');
+      }
+      
+      toast.dismiss();
+      toast.success(`${monitor.url} checked successfully`);
+      refreshMonitors();
+    } catch (error) {
+      console.error('Error checking URL:', error);
+      toast.dismiss();
+      toast.error('Failed to check URL');
+    }
+  }, [refreshMonitors]);
 
   if (error) return <div className="text-red-500">Failed to load monitors</div>;
   if (!monitors) return <div>Loading...</div>;
@@ -304,6 +351,13 @@ export default function MonitorsTable() {
                           title="View Stats"
                         >
                           <BarChart2 size={20} strokeWidth={1.5} />
+                        </button>
+                        <button
+                          onClick={() => handleCheckAgain(monitor)}
+                          className="text-gray-400 hover:text-blue-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                          title="Check Again"
+                        >
+                          <RefreshCw size={20} strokeWidth={1.5} />
                         </button>
                         <button
                           onClick={() => {
