@@ -20,6 +20,7 @@ export default async function DashboardPage() {
           <div className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-8 text-white uppercase border-b border-[#E3CF20] w-fit mx-auto">Monitor Websites</h2>
             <UrlMonitorForm />
+            HELLO
           </div>
         </div>
 
