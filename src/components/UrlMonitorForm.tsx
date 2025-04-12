@@ -27,6 +27,9 @@ export default function UrlMonitorForm() {
   // Get the pagination context
   const { resetMonitorsPagination } = usePaginationContext();
 
+  // Add submitButtonText variable
+  const submitButtonText = session ? 'Save & Monitor' : 'Check Now';
+
   const handleAddUrl = () => {
     setUrls([...urls, { url: '', interval: '5m' }]);
   };
@@ -262,6 +265,7 @@ export default function UrlMonitorForm() {
                 value={url.interval}
                 onChange={(e) => handleUrlChange(index, 'interval', e.target.value)}
                 className="mt-1 block w-full hover:border-[#E3CF20] custom-select min-w-[200px]"
+                suppressHydrationWarning
               >
                 <option value="once">Once (no monitoring)</option>
                 <option value="5m">5 minutes</option>
@@ -292,6 +296,7 @@ export default function UrlMonitorForm() {
             type="button"
             onClick={handleAddUrl}
             className="px-4 py-2 text-md font-medium text-[#E3CF20] hover:text-[#d4c01c] border border-[#E3CF20] rounded-md hover:bg-[#2D2D2D] flex items-center justify-between"
+            suppressHydrationWarning
           >
             <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <line x1="12" y1="5" x2="12" y2="19" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
@@ -303,8 +308,9 @@ export default function UrlMonitorForm() {
             type="submit"
             disabled={isSubmitting}
             className="flex-1 px-4 py-2 text-md font-medium text-[#121212] uppercase bg-[#E3CF20] rounded-md hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed"
+            suppressHydrationWarning
           >
-            {session ? 'Save & Monitor' : 'Check Now'}
+            {submitButtonText}
           </button>
         </div>
       </form>

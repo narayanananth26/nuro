@@ -283,10 +283,10 @@ export default function MonitorsTable() {
                   <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[150px]">
                     Last Checked
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                  <th scope="col" className="px-6 py-3 text-left left-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
                     Interval
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-sm font-medium text-gray-400 uppercase tracking-wider w-[80px]">
+                  <th scope="col" className="px-6 py-3 text-sm font-medium text-gray-400 uppercase tracking-wider w-[80px] text-right">
                     Actions
                   </th>
                 </tr>
@@ -305,7 +305,7 @@ export default function MonitorsTable() {
                         {monitor.url}
                       </a>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px] text-left">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         monitor.status === 'UP' 
                           ? 'bg-green-900 text-green-300'
@@ -314,16 +314,16 @@ export default function MonitorsTable() {
                         {monitor.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px] text-left">
                       {monitor.responseTime ? `${monitor.responseTime}ms` : 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px] text-left">
                       {monitor.lastChecked 
                         ? formatDistanceToNow(new Date(monitor.lastChecked), { addSuffix: true })
                         : 'Never'
                       }
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px] text-left">
                       {(() => {
                         // Get interval from the monitor
                         const interval = monitor.interval;

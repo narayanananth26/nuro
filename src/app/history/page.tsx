@@ -279,19 +279,19 @@ export default function HistoryPage() {
               <table className="min-w-full divide-y divide-[#333333] table-fixed">
                 <thead className="bg-[#1E1E1E]">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[250px]">
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[250px]">
                       URL
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
                       Status
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
                       Response Time
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[150px]">
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[150px]">
                       Timestamp
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
                       Interval
                     </th>
                   </tr>
@@ -311,7 +311,7 @@ export default function HistoryPage() {
                         </a>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px]">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${
                           log.status === 'UP' 
                             ? 'bg-green-900 text-green-300'
                             : 'bg-red-900 text-red-300'
