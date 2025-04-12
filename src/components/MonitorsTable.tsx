@@ -188,7 +188,7 @@ export default function MonitorsTable() {
       console.error('Error deleting monitor:', error);
       toast.error('Failed to delete monitor');
     }
-  }, [refreshMonitors]);
+  }, [refreshMonitors, deleteMonitor]);
 
   const handleCheckAgain = useCallback(async (monitor: UrlMonitor) => {
     try {
