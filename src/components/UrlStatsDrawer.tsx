@@ -15,11 +15,10 @@ interface UrlStatsDrawerProps {
 }
 
 export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRangeChange, onWidthChange, width: initialWidth }: UrlStatsDrawerProps) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [width, setWidth] = useState(initialWidth || 600);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [drawerHeight, setDrawerHeight] = useState(500); // Default height
   const [isMobile, setIsMobile] = useState(false);
-  const [drawerHeight, setDrawerHeight] = useState(500); // Default height for mobile
+  const drawerRef = useRef<HTMLDivElement>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
@@ -38,13 +37,16 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
   }, []);
 
   useEffect(() => {
-    setIsVisible(true);
+    // Use requestAnimationFrame to ensure the drawer is in the DOM before animating
+    requestAnimationFrame(() => {
+      // Use a short timeout to ensure the initial state is applied before transitioning
+      setTimeout(() => {
+        setIsVisible(true);
+      }, 50);
+    });
+    
     return () => setIsVisible(false);
   }, [monitor._id]);
-
-  useEffect(() => {
-    setWidth(initialWidth || 600);
-  }, [initialWidth]);
   
   // Handle click outside to close drawer
   useEffect(() => {
@@ -68,8 +70,6 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
   }, [onClose, showExportMenu]);
 
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartX = useRef(0);
-  const dragStartWidth = useRef(0);
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(0);
   const [isExporting, setIsExporting] = useState(false);
@@ -88,16 +88,9 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
 
   const startDragging = (clientX: number, clientY: number) => {
     setIsDragging(true);
-    
-    if (isMobile) {
-      dragStartY.current = clientY;
-      dragStartHeight.current = drawerHeight;
-    } else {
-      dragStartX.current = clientX;
-      dragStartWidth.current = width;
-    }
-    
-    document.body.style.cursor = isMobile ? 'row-resize' : 'col-resize';
+    dragStartY.current = clientY;
+    dragStartHeight.current = drawerHeight;
+    document.body.style.cursor = 'row-resize';
     document.body.classList.add('no-select');
   };
 
@@ -106,33 +99,20 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
       if (!isDragging) return;
       e.preventDefault(); // Prevent text selection during drag
       
-      if (isMobile) {
-        const delta = dragStartY.current - e.clientY;
-        const newHeight = Math.min(Math.max(dragStartHeight.current + delta, 300), window.innerHeight * 0.9);
-        setDrawerHeight(newHeight);
-      } else {
-        const delta = dragStartX.current - e.clientX;
-        const newWidth = Math.min(Math.max(dragStartWidth.current + delta, 300), window.innerWidth * 0.7);
-        setWidth(newWidth);
-        onWidthChange(newWidth);
-      }
+      const delta = dragStartY.current - e.clientY;
+      const maxHeight = window.innerHeight * 0.9;
+      const newHeight = Math.min(Math.max(dragStartHeight.current + delta, 300), maxHeight);
+      setDrawerHeight(newHeight);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isDragging || e.touches.length === 0) return;
       
-      if (isMobile) {
-        const touch = e.touches[0];
-        const delta = dragStartY.current - touch.clientY;
-        const newHeight = Math.min(Math.max(dragStartHeight.current + delta, 300), window.innerHeight * 0.9);
-        setDrawerHeight(newHeight);
-      } else {
-        const touch = e.touches[0];
-        const delta = dragStartX.current - touch.clientX;
-        const newWidth = Math.min(Math.max(dragStartWidth.current + delta, 300), window.innerWidth * 0.7);
-        setWidth(newWidth);
-        onWidthChange(newWidth);
-      }
+      const touch = e.touches[0];
+      const delta = dragStartY.current - touch.clientY;
+      const maxHeight = window.innerHeight * 0.9;
+      const newHeight = Math.min(Math.max(dragStartHeight.current + delta, 300), maxHeight);
+      setDrawerHeight(newHeight);
     };
 
     const handleMouseUp = () => {
@@ -163,7 +143,7 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
       // Clean up in case component unmounts during drag
       document.body.classList.remove('no-select');
     };
-  }, [isDragging, onWidthChange, isMobile]);
+  }, [isDragging]);
 
   const handleExport = async (format: 'csv' | 'json') => {
     try {
@@ -220,19 +200,17 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
   // We'll use a ref to track the actual chart container width
   const chartContainerRef = useRef<HTMLDivElement>(null);
   
-  // Update chart width when window or drawer size changes
-  const [chartWidth, setChartWidth] = useState(isMobile ? window.innerWidth - 40 : width - 80);
+  // Dynamic chart width based on container
+  const [chartWidth, setChartWidth] = useState(300);
 
   useEffect(() => {
     const updateChartWidth = () => {
       if (chartContainerRef.current) {
         const containerWidth = chartContainerRef.current.clientWidth || 250;
         setChartWidth(containerWidth - 20); // Small buffer
-      } else if (isMobile) {
-        const drawerWidth = drawerRef.current?.clientWidth || window.innerWidth;
-        setChartWidth(Math.min(drawerWidth - 60, window.innerWidth - 60));
       } else {
-        setChartWidth(width - 80);
+        const containerWidth = drawerRef.current?.clientWidth || window.innerWidth;
+        setChartWidth(Math.max(containerWidth - 40, 250));
       }
     };
 
@@ -253,43 +231,27 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateChartWidth);
     };
-  }, [isMobile, width, drawerRef]);
+  }, [isMobile, drawerRef]);
 
   return (
     <div 
       ref={drawerRef}
-      className={`font-[Fira_Sans] fixed ${
-        isMobile 
-          ? 'left-0 right-0 bottom-0' 
-          : 'top-[65px] bottom-0 right-0'
-      } bg-[#1E1E1E] shadow-xl transform transition-transform duration-300 ${
-        isMobile 
-          ? `${isVisible ? 'translate-y-0' : 'translate-y-full'} border-t` 
-          : `${isVisible ? 'translate-x-0' : 'translate-x-full'} border-l`
-      } border-[#333333] overflow-hidden`}
-      style={isMobile ? { height: `${drawerHeight}px` } : { width: `${width}px` }}
+      className={`font-[Fira_Sans] fixed left-0 right-0 bottom-0 bg-[#1E1E1E] shadow-xl transform transition-all duration-300 ease-in-out ${
+        isVisible ? 'translate-y-0' : 'translate-y-full'
+      } border-t border-[#333333] overflow-hidden z-50`}
+      style={{ height: `${drawerHeight}px` }}
     >
-      {/* Drag handle - horizontal for mobile, vertical for desktop */}
-      {isMobile ? (
-        <div 
-          className="absolute top-0 left-0 right-0 h-6 bg-[#262626] flex items-center justify-center cursor-row-resize touch-action-none"
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-        >
-          <div className="w-10 h-1 bg-[#444] rounded-full" />
-        </div>
-      ) : (
-        <div 
-          className="drag-handle"
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-        >
-          <div className="absolute inset-y-0 left-0 w-8 -translate-x-4" />
-        </div>
-      )}
+      {/* Drag handle */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-6 bg-[#262626] flex items-center justify-center cursor-row-resize touch-action-none"
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+      >
+        <div className="w-10 h-1 bg-[#444] rounded-full" />
+      </div>
 
-      <div className={`h-full flex flex-col ${isMobile ? 'py-4 pt-8' : 'p-6'} overflow-hidden`}>
-        <div className="flex justify-between items-center mb-4">
+      <div className={`h-full flex flex-col py-4 pt-8 overflow-hidden`}>
+        <div className="flex justify-between items-center mb-4 px-4">
           <h2 className="text-xl font-semibold text-white uppercase border-b border-[#E3CF20]">
             Monitor Stats
           </h2>

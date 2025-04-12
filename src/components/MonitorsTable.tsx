@@ -201,6 +201,12 @@ export default function MonitorsTable() {
     }
   }, [refreshMonitors]);
 
+  // Handle opening the stats drawer without page refresh
+  const openStatsDrawer = useCallback((monitor: UrlMonitor) => {
+    // Update state without triggering navigation
+    setSelectedMonitor(monitor);
+  }, []);
+
   if (error) return <div className="text-red-500">Failed to load monitors</div>;
   if (!monitors) return <div>Loading...</div>;
 
@@ -209,9 +215,7 @@ export default function MonitorsTable() {
   return (
     <div className="flex flex-col">
       <div 
-        className={`flex flex-col transition-all duration-300 ${
-          selectedMonitor ? 'mr-[' + drawerWidth + 'px]' : ''
-        }`}
+        className="flex flex-col transition-all duration-300"
       >
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
@@ -346,7 +350,11 @@ export default function MonitorsTable() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex flex-row items-center justify-end space-x-4">
                         <button 
-                          onClick={() => setSelectedMonitor(monitor)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openStatsDrawer(monitor);
+                          }}
                           className="text-gray-400 hover:text-[#E3CF20] cursor-pointer font-[Fira_Sans] flex items-center justify-center"
                           title="View Stats"
                         >
