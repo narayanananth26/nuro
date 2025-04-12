@@ -16,30 +16,30 @@ interface UrlStatsDrawerProps {
 
 export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRangeChange, onWidthChange, width: initialWidth }: UrlStatsDrawerProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [drawerHeight, setDrawerHeight] = useState(500); // Default height
-  const [isMobile, setIsMobile] = useState(false);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(initialWidth || 600);
+  const [drawerHeight, setDrawerHeight] = useState(500);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Mobile detection
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const isMobile = windowWidth < 768;
 
-  // Check if mobile view on mount and window resize
+  // Update window width on resize
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
     };
     
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Animation delay
   useEffect(() => {
-    // Use requestAnimationFrame to ensure the drawer is in the DOM before animating
     requestAnimationFrame(() => {
-      // Use a short timeout to ensure the initial state is applied before transitioning
       setTimeout(() => {
         setIsVisible(true);
       }, 50);
@@ -47,6 +47,11 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
     
     return () => setIsVisible(false);
   }, [monitor._id]);
+
+  // Update width from props
+  useEffect(() => {
+    setWidth(initialWidth || 600);
+  }, [initialWidth]);
   
   // Handle click outside to close drawer
   useEffect(() => {
@@ -69,81 +74,115 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
     };
   }, [onClose, showExportMenu]);
 
+  // Dragging state
   const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(0);
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(0);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent text selection
-    startDragging(e.clientX, e.clientY);
+    e.preventDefault();
+    if (isMobile) {
+      dragStartY.current = e.clientY;
+      dragStartHeight.current = drawerHeight;
+      document.body.style.cursor = 'row-resize';
+    } else {
+      dragStartX.current = e.clientX;
+      dragStartWidth.current = width;
+      document.body.style.cursor = 'col-resize';
+    }
+    
+    setIsDragging(true);
+    document.body.classList.add('no-select');
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 0) return;
     e.preventDefault();
+    
     const touch = e.touches[0];
-    startDragging(touch.clientX, touch.clientY);
-  };
-
-  const startDragging = (clientX: number, clientY: number) => {
+    if (isMobile) {
+      dragStartY.current = touch.clientY;
+      dragStartHeight.current = drawerHeight;
+    } else {
+      dragStartX.current = touch.clientX;
+      dragStartWidth.current = width;
+    }
+    
     setIsDragging(true);
-    dragStartY.current = clientY;
-    dragStartHeight.current = drawerHeight;
-    document.body.style.cursor = 'row-resize';
     document.body.classList.add('no-select');
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
-      e.preventDefault(); // Prevent text selection during drag
+      e.preventDefault();
       
-      const delta = dragStartY.current - e.clientY;
-      const maxHeight = window.innerHeight * 0.9;
-      const newHeight = Math.min(Math.max(dragStartHeight.current + delta, 300), maxHeight);
-      setDrawerHeight(newHeight);
+      if (isMobile) {
+        const delta = dragStartY.current - e.clientY;
+        const newHeight = Math.min(
+          Math.max(dragStartHeight.current + delta, 300), 
+          window.innerHeight * 0.9
+        );
+        setDrawerHeight(newHeight);
+      } else {
+        const delta = dragStartX.current - e.clientX;
+        const newWidth = Math.min(
+          Math.max(dragStartWidth.current + delta, 300), 
+          window.innerWidth * 0.7
+        );
+        setWidth(newWidth);
+        onWidthChange(newWidth);
+      }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isDragging || e.touches.length === 0) return;
       
       const touch = e.touches[0];
-      const delta = dragStartY.current - touch.clientY;
-      const maxHeight = window.innerHeight * 0.9;
-      const newHeight = Math.min(Math.max(dragStartHeight.current + delta, 300), maxHeight);
-      setDrawerHeight(newHeight);
+      if (isMobile) {
+        const delta = dragStartY.current - touch.clientY;
+        const newHeight = Math.min(
+          Math.max(dragStartHeight.current + delta, 300), 
+          window.innerHeight * 0.9
+        );
+        setDrawerHeight(newHeight);
+      } else {
+        const delta = dragStartX.current - touch.clientX;
+        const newWidth = Math.min(
+          Math.max(dragStartWidth.current + delta, 300), 
+          window.innerWidth * 0.7
+        );
+        setWidth(newWidth);
+        onWidthChange(newWidth);
+      }
     };
 
-    const handleMouseUp = () => {
+    const handleEnd = () => {
       setIsDragging(false);
       document.body.style.cursor = '';
       document.body.classList.remove('no-select');
     };
 
-    const handleTouchEnd = () => {
-      setIsDragging(false);
-      document.body.classList.remove('no-select');
-    };
-
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('touchend', handleTouchEnd);
-      document.addEventListener('touchcancel', handleTouchEnd);
+      document.addEventListener('touchend', handleEnd);
+      document.addEventListener('touchcancel', handleEnd);
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseup', handleEnd);
       document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('touchcancel', handleTouchEnd);
-      // Clean up in case component unmounts during drag
+      document.removeEventListener('touchend', handleEnd);
+      document.removeEventListener('touchcancel', handleEnd);
       document.body.classList.remove('no-select');
     };
-  }, [isDragging]);
+  }, [isDragging, onWidthChange, isMobile]);
 
   const handleExport = async (format: 'csv' | 'json') => {
     try {
@@ -196,31 +235,26 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
     responseTime: log.responseTime,
     status: log.status === 'UP' ? 1 : 0,
   }));
-
-  // We'll use a ref to track the actual chart container width
-  const chartContainerRef = useRef<HTMLDivElement>(null);
   
-  // Dynamic chart width based on container
+  // Dynamic chart width
   const [chartWidth, setChartWidth] = useState(300);
 
   useEffect(() => {
     const updateChartWidth = () => {
       if (chartContainerRef.current) {
         const containerWidth = chartContainerRef.current.clientWidth || 250;
-        setChartWidth(containerWidth - 20); // Small buffer
-      } else {
+        setChartWidth(containerWidth - 20);
+      } else if (isMobile) {
         const containerWidth = drawerRef.current?.clientWidth || window.innerWidth;
         setChartWidth(Math.max(containerWidth - 40, 250));
+      } else {
+        setChartWidth(width - 80);
       }
     };
 
     updateChartWidth();
     
-    // Use ResizeObserver for more precise size tracking
-    const resizeObserver = new ResizeObserver(() => {
-      updateChartWidth();
-    });
-    
+    const resizeObserver = new ResizeObserver(updateChartWidth);
     if (chartContainerRef.current) {
       resizeObserver.observe(chartContainerRef.current);
     }
@@ -231,26 +265,58 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateChartWidth);
     };
-  }, [isMobile, drawerRef]);
+  }, [isMobile, width, drawerRef]);
+
+  // Mobile drawer styles
+  const mobileDrawerStyles = {
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: `${drawerHeight}px`,
+    transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
+    transition: 'transform 300ms ease-in-out',
+  } as React.CSSProperties;
+
+  // Desktop drawer styles
+  const desktopDrawerStyles = {
+    position: 'fixed',
+    top: '65px',
+    right: 0,
+    bottom: 0,
+    width: `${width}px`,
+    transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
+    transition: 'transform 300ms ease-in-out',
+  } as React.CSSProperties;
 
   return (
     <div 
       ref={drawerRef}
-      className={`font-[Fira_Sans] fixed left-0 right-0 bottom-0 bg-[#1E1E1E] shadow-xl transform transition-all duration-300 ease-in-out ${
-        isVisible ? 'translate-y-0' : 'translate-y-full'
-      } border-t border-[#333333] overflow-hidden z-50`}
-      style={{ height: `${drawerHeight}px` }}
+      className={`
+        font-[Fira_Sans] bg-[#1E1E1E] shadow-xl overflow-hidden z-50 
+        ${isMobile ? 'border-t' : 'border-l'} border-[#333333]
+      `}
+      style={isMobile ? mobileDrawerStyles : desktopDrawerStyles}
     >
-      {/* Drag handle */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-6 bg-[#262626] flex items-center justify-center cursor-row-resize touch-action-none"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-      >
-        <div className="w-10 h-1 bg-[#444] rounded-full" />
-      </div>
+      {isMobile ? (
+        <div 
+          className="absolute top-0 left-0 right-0 h-6 bg-[#262626] flex items-center justify-center cursor-row-resize touch-action-none"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
+          <div className="w-10 h-1 bg-[#444] rounded-full" />
+        </div>
+      ) : (
+        <div 
+          className="drag-handle"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
+          <div className="absolute inset-y-0 left-0 w-8 -translate-x-4" />
+        </div>
+      )}
 
-      <div className={`h-full flex flex-col py-4 pt-8 overflow-hidden`}>
+      <div className={`h-full flex flex-col ${isMobile ? 'py-4 pt-8' : 'p-6'} overflow-hidden`}>
         <div className="flex justify-between items-center mb-4 px-4">
           <h2 className="text-xl font-semibold text-white uppercase border-b border-[#E3CF20]">
             Monitor Stats

@@ -28,6 +28,7 @@ export default function MonitorsTable() {
   const [deleteMonitor, setDeleteMonitor] = useState<UrlMonitor | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerWidth, setDrawerWidth] = useState(600);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Get the pagination context
   const { monitorsPaginationResetTrigger } = usePaginationContext();
@@ -105,6 +106,20 @@ export default function MonitorsTable() {
       setCurrentPage(Math.max(1, totalPages));
     }
   }, [currentPage, totalPages]);
+
+  // Check if mobile view on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Event handlers
   const handleEdit = useCallback(async (url: string, interval: number) => {
@@ -203,8 +218,13 @@ export default function MonitorsTable() {
 
   // Handle opening the stats drawer without page refresh
   const openStatsDrawer = useCallback((monitor: UrlMonitor) => {
-    // Update state without triggering navigation
-    setSelectedMonitor(monitor);
+    // Clear selection first to ensure animation reset
+    setSelectedMonitor(null);
+    
+    // Use a short timeout to ensure state has updated before setting new monitor
+    setTimeout(() => {
+      setSelectedMonitor(monitor);
+    }, 10);
   }, []);
 
   if (error) return <div className="text-red-500">Failed to load monitors</div>;
@@ -215,7 +235,9 @@ export default function MonitorsTable() {
   return (
     <div className="flex flex-col">
       <div 
-        className="flex flex-col transition-all duration-300"
+        className={`flex flex-col transition-all duration-300 ${
+          selectedMonitor && !isMobile ? 'mr-[' + drawerWidth + 'px]' : ''
+        }`}
       >
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
