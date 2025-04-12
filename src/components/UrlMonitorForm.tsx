@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { usePaginationContext } from '@/contexts/PaginationContext';
@@ -23,12 +23,27 @@ export default function UrlMonitorForm() {
   const [urls, setUrls] = useState<UrlInput[]>([{ url: '', interval: '5m' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [healthCheckResults, setHealthCheckResults] = useState<Record<string, HealthCheckResult>>({});
+  const [isMobile, setIsMobile] = useState(false);
   
   // Get the pagination context
   const { resetMonitorsPagination } = usePaginationContext();
 
   // Add submitButtonText variable
   const submitButtonText = session ? 'Save & Monitor' : 'Check Now';
+  
+  // Check if mobile view on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   const handleAddUrl = () => {
     setUrls([...urls, { url: '', interval: '5m' }]);
@@ -240,7 +255,7 @@ export default function UrlMonitorForm() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4 text-md">
         {urls.map((url, index) => (
-          <div key={index} className="flex gap-4 items-end">
+          <div key={index} className={`${isMobile ? 'flex flex-col space-y-4' : 'flex gap-4 items-end'}`}>
             <div className="flex-1">
               <label htmlFor={`url-${index}`} className="block font-medium text-white text-start">
                 Website URL
@@ -256,58 +271,60 @@ export default function UrlMonitorForm() {
               />
             </div>
 
-            <div className="flex-1">
-              <label htmlFor={`interval-${index}`} className="block font-medium text-white text-start">
-                Check Interval
-              </label>
-              <select
-                id={`interval-${index}`}
-                value={url.interval}
-                onChange={(e) => handleUrlChange(index, 'interval', e.target.value)}
-                className="mt-1 block w-full hover:border-[#E3CF20] custom-select min-w-[200px]"
-                suppressHydrationWarning
-              >
-                <option value="once">Once (no monitoring)</option>
-                <option value="5m">5 minutes</option>
-                <option value="10m">10 minutes</option>
-                <option value="30m">30 minutes</option>
-                <option value="1h">1 hour</option>
-              </select>
-            </div>
-
-            <div className="flex items-center h-10">
-              {index > 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleRemoveUrl(index)}
-                  className="text-red-400 hover:text-red-300 rounded-md flex items-center justify-center w-10 h-10"
-                  aria-label="Remove URL"
+            <div className={`${isMobile ? 'flex justify-between items-end' : 'flex-1'}`}>
+              <div className={isMobile ? 'flex-1 mr-2' : 'w-full'}>
+                <label htmlFor={`interval-${index}`} className="block font-medium text-white text-start">
+                  Check Interval
+                </label>
+                <select
+                  id={`interval-${index}`}
+                  value={url.interval}
+                  onChange={(e) => handleUrlChange(index, 'interval', e.target.value)}
+                  className="mt-1 block w-full hover:border-[#E3CF20] custom-select min-w-[200px]"
+                  suppressHydrationWarning
                 >
-                  <Trash2 size={20} strokeWidth={1.5} />
-                </button>
-              )}
-              {index === 0 && <div className="w-10 h-10"></div>}
+                  <option value="once">Once (no monitoring)</option>
+                  <option value="5m">5 minutes</option>
+                  <option value="10m">10 minutes</option>
+                  <option value="30m">30 minutes</option>
+                  <option value="1h">1 hour</option>
+                </select>
+              </div>
+              
+              <div className={`${isMobile ? 'flex items-end pb-2 ml-2' : 'flex items-center h-10'}`}>
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveUrl(index)}
+                    className="text-red-400 hover:text-red-300 rounded-md flex items-center justify-center w-10 h-10"
+                    aria-label="Remove URL"
+                  >
+                    <Trash2 size={20} strokeWidth={1.5} />
+                  </button>
+                )}
+                {index === 0 && !isMobile && <div className="w-10 h-10"></div>}
+              </div>
             </div>
           </div>
         ))}
 
-        <div className="flex gap-4">
+        <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex gap-4'}`}>
           <button
             type="button"
             onClick={handleAddUrl}
-            className="px-4 py-2 text-md font-medium text-[#E3CF20] hover:text-[#d4c01c] border border-[#E3CF20] rounded-md hover:bg-[#2D2D2D] flex items-center justify-between"
+            className={`${isMobile ? 'w-full' : ''} px-4 py-2 text-md font-medium text-[#E3CF20] hover:text-[#d4c01c] border border-[#E3CF20] rounded-md hover:bg-[#2D2D2D] flex items-center justify-center`}
             suppressHydrationWarning
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-  <line x1="12" y1="5" x2="12" y2="19" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
-  <line x1="5" y1="12" x2="19" y2="12" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
-</svg> Add another URL
+            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2">
+              <line x1="12" y1="5" x2="12" y2="19" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
+              <line x1="5" y1="12" x2="19" y2="12" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
+            </svg> Add another URL
           </button>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 px-4 py-2 text-md font-medium text-[#121212] uppercase bg-[#E3CF20] rounded-md hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`${isMobile ? 'w-full' : 'flex-1'} px-4 py-2 text-md font-medium text-[#121212] uppercase bg-[#E3CF20] rounded-md hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed`}
             suppressHydrationWarning
           >
             {submitButtonText}
@@ -321,9 +338,9 @@ export default function UrlMonitorForm() {
           <div className="space-y-4">
             {Object.entries(healthCheckResults).map(([url, result]) => (
               <div key={url} className="p-4 border border-[#333333] bg-[#1E1E1E] rounded-md">
-                <div className="flex justify-between items-center">
+                <div className={`${isMobile ? 'flex flex-col space-y-2' : 'flex justify-between items-center'}`}>
                   <div>
-                    <h4 className="font-medium text-white">{result.originalUrl || url}</h4>
+                    <h4 className="font-medium text-white break-all">{result.originalUrl || url}</h4>
                     <p className={`mt-1 text-md ${
                       result.status < 400 ? 'text-green-400' : 'text-red-400'
                     }`}>
