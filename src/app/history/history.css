@@ -37,3 +37,17 @@
   max-width: 1200px;
   margin: 0 auto;
 }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .history-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  /* Prevent horizontal scroll */
+  .history-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}

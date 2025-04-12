@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import useSWR from 'swr';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { Download } from 'lucide-react';
 import './history.css';
 
 interface MonitorLog {
@@ -32,6 +33,9 @@ export default function HistoryPage() {
   const { data: session, status } = useSession();
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -39,6 +43,38 @@ export default function HistoryPage() {
       router.push('/login');
     }
   }, [status, router]);
+
+  // Check if mobile view on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+  
+  // Handle click outside to close export menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showExportMenu && 
+        exportMenuRef.current && 
+        !exportMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
 
   const { data: logs, error, mutate: refreshLogs } = useSWR<MonitorLog[]>(
     status === 'authenticated' ? HISTORY_KEY : null,
@@ -204,8 +240,8 @@ export default function HistoryPage() {
         <h1 className="text-2xl font-bold mb-6 text-white mx-auto uppercase border-b border-[#E3CF20] w-fit mt-8">URL Monitoring History</h1>
         
         <div className="flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center space-x-2">
+          <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex justify-between'} items-center mb-4`}>
+            <div className={`flex ${isMobile ? 'flex-wrap' : ''} items-center space-x-2 ${isMobile ? 'w-full justify-between' : ''}`}>
               <button
                 onClick={async () => {
                   try {
@@ -246,23 +282,40 @@ export default function HistoryPage() {
               >
                 Down
               </button>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={exportAsCSV}
-                className="px-3 py-1 rounded bg-[#2D2D2D] text-white hover:bg-[#E3CF20] hover:text-[#121212]"
-                title="Export as CSV"
-              >
-                Export CSV
-              </button>
-              <button
-                onClick={exportAsJSON}
-                className="px-3 py-1 rounded bg-[#2D2D2D] text-white hover:bg-[#E3CF20] hover:text-[#121212]"
-                title="Export as JSON"
-              >
-                Export JSON
-              </button>
+              
+              <div className="relative ml-auto" ref={exportMenuRef}>
+                <button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="px-3 py-1 rounded bg-[#2D2D2D] text-white hover:bg-[#E3CF20] hover:text-[#121212] flex items-center space-x-1"
+                  title="Export options"
+                >
+                  <Download size={16} className="mr-1" />
+                  <span className={isMobile ? 'sr-only' : ''}>Export</span>
+                </button>
+                
+                {showExportMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-[#2D2D2D] rounded shadow-lg z-10 w-32">
+                    <button
+                      onClick={() => {
+                        exportAsCSV();
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-[#444] text-white flex items-center"
+                    >
+                      <Download size={16} className="mr-2" /> CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        exportAsJSON();
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-[#444] text-white flex items-center"
+                    >
+                      <Download size={16} className="mr-2" /> JSON
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -276,85 +329,138 @@ export default function HistoryPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-[#333333] table-fixed">
-                <thead className="bg-[#1E1E1E]">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[250px]">
-                      URL
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
-                      Response Time
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[150px]">
-                      Timestamp
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
-                      Interval
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-[#121212] divide-y divide-[#333333] font-[IBM_Plex_Mono]">
+              {!isMobile ? (
+                <table className="min-w-full divide-y divide-[#333333] table-fixed">
+                  <thead className="bg-[#1E1E1E]">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[250px]">
+                        URL
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                        Status
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
+                        Response Time
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[150px]">
+                        Timestamp
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                        Interval
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-[#121212] divide-y divide-[#333333] font-[IBM_Plex_Mono]">
+                    {paginatedLogs.map((log: MonitorLog, index: number) => (
+                      <tr key={`${log.monitorId}-${log.timestamp}-${index}`} className="hover:bg-[#1E1E1E]">
+                        <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate">
+                          <a 
+                            href={log.url.startsWith('http') ? log.url : `https://${log.url}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="hover:text-[#E3CF20] hover:underline"
+                            title={log.url}
+                          >
+                            {log.url}
+                          </a>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px]">
+                          <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                            log.status === 'UP' 
+                              ? 'bg-green-900 text-green-300'
+                              : 'bg-red-900 text-red-300'
+                          }`}>
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px]">
+                          {log.responseTime}ms
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px]">
+                          {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px]">
+                          {(() => {
+                            // Get interval from the monitor
+                            const interval = log.monitorInterval;
+                            
+                            // Special case for 'once' (interval = 0)
+                            if (interval === 0) {
+                              return 'Once';
+                            }
+                            
+                            if (isNaN(interval) || interval < 0) {
+                              return '5m'; // Default fallback
+                            }
+                            
+                            // Format based on minutes
+                            return interval < 60 
+                              ? `${interval}m` 
+                              : `${Math.floor(interval / 60)}h`;
+                          })()} 
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 font-[IBM_Plex_Mono]">
                   {paginatedLogs.map((log: MonitorLog, index: number) => (
-                    <tr key={`${log.monitorId}-${log.timestamp}-${index}`} className="hover:bg-[#1E1E1E]">
-                      <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate">
+                    <div key={`${log.monitorId}-${log.timestamp}-${index}`} className="bg-[#121212] border border-[#333333] rounded-lg p-4 relative">
+                      <div className="flex justify-between items-center mb-3">
                         <a 
                           href={log.url.startsWith('http') ? log.url : `https://${log.url}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="hover:text-[#E3CF20] hover:underline"
+                          className="text-white hover:text-[#E3CF20] hover:underline font-medium text-sm max-w-[240px] truncate"
                           title={log.url}
                         >
                           {log.url}
                         </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px]">
-                        <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                        <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           log.status === 'UP' 
                             ? 'bg-green-900 text-green-300'
                             : 'bg-red-900 text-red-300'
                         }`}>
                           {log.status}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px]">
-                        {log.responseTime}ms
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px]">
-                        {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px]">
-                        {(() => {
-                          // Get interval from the monitor
-                          const interval = log.monitorInterval;
-                          
-                          // Special case for 'once' (interval = 0)
-                          if (interval === 0) {
-                            return 'Once';
-                          }
-                          
-                          if (isNaN(interval) || interval < 0) {
-                            return '5m'; // Default fallback
-                          }
-                          
-                          // Format based on minutes
-                          return interval < 60 
-                            ? `${interval}m` 
-                            : `${Math.floor(interval / 60)}h`;
-                        })()} 
-                      </td>
-                    </tr>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
+                        <div>
+                          <span className="block text-gray-500 mb-1">Response Time</span>
+                          <span>{log.responseTime}ms</span>
+                        </div>
+                        <div>
+                          <span className="block text-gray-500 mb-1">Timestamp</span>
+                          <span>
+                            {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-gray-500 mb-1">Check Interval</span>
+                          <span>
+                            {(() => {
+                              const interval = log.monitorInterval;
+                              if (interval === 0) return 'Once';
+                              if (isNaN(interval) || interval < 0) return '5m';
+                              return interval < 60 
+                                ? `${interval}m` 
+                                : `${Math.floor(interval / 60)}h`;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4">
+            <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex justify-between'} items-center mt-4`}>
               <div className="text-sm text-gray-400">
                 Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} logs
               </div>
@@ -377,7 +483,7 @@ export default function HistoryPage() {
                 </button>
                 
                 {/* Page Numbers */}
-                {getPageNumbers.map(pageNum => (
+                {!isMobile && getPageNumbers.map(pageNum => (
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
@@ -390,6 +496,12 @@ export default function HistoryPage() {
                     {pageNum}
                   </button>
                 ))}
+                
+                {isMobile && (
+                  <span className="text-sm text-white mx-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                )}
                 
                 {/* Right Arrow */}
                 <button
