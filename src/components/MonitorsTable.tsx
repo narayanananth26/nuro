@@ -8,7 +8,7 @@ import { usePaginationContext } from '@/contexts/PaginationContext';
 import type { UrlMonitor, MonitorLog } from '@/types/monitor';
 import EditMonitorModal from './EditMonitorModal';
 import DeleteMonitorModal from './DeleteMonitorModal';
-import { BarChart2, Edit2, Trash2, RefreshCw } from 'lucide-react';
+import { BarChart2, Edit2, Trash2, RefreshCw, MoreVertical } from 'lucide-react';
 
 type FilterStatus = 'ALL' | 'UP' | 'DOWN';
 const ITEMS_PER_PAGE = 5;
@@ -29,6 +29,7 @@ export default function MonitorsTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerWidth, setDrawerWidth] = useState(600);
   const [isMobile, setIsMobile] = useState(false);
+  const [mobileActionMenu, setMobileActionMenu] = useState<string | null>(null);
   
   // Get the pagination context
   const { monitorsPaginationResetTrigger } = usePaginationContext();
@@ -120,6 +121,26 @@ export default function MonitorsTable() {
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
+
+  // Handle closing the mobile action menu when clicking outside
+  useEffect(() => {
+    if (!mobileActionMenu) return;
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mobileActionMenu && 
+        !(event.target as Element).closest('.mobile-action-button') && 
+        !(event.target as Element).closest('.mobile-action-menu')
+      ) {
+        setMobileActionMenu(null);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mobileActionMenu]);
 
   // Event handlers
   const handleEdit = useCallback(async (url: string, interval: number) => {
@@ -294,125 +315,237 @@ export default function MonitorsTable() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[#333333] table-fixed">
-              <thead className="bg-[#1E1E1E]">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[250px]">
-                    URL
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
-                    Status
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
-                    Response Time
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[150px]">
-                    Last Checked
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left left-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
-                    Interval
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-sm font-medium text-gray-400 uppercase tracking-wider w-[80px] text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-[#121212] divide-y divide-[#333333] font-[IBM_Plex_Mono]">
+            {!isMobile ? (
+              <table className="min-w-full divide-y divide-[#333333] table-fixed">
+                <thead className="bg-[#1E1E1E]">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[250px]">
+                      URL
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                      Status
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[160px] whitespace-nowrap">
+                      Response Time
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-sm font-medium text-gray-400 uppercase tracking-wider w-[150px]">
+                      Last Checked
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left left-sm font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+                      Interval
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-sm font-medium text-gray-400 uppercase tracking-wider w-[80px] text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-[#121212] divide-y divide-[#333333] font-[IBM_Plex_Mono]">
+                  {paginatedMonitors.map((monitor) => (
+                    <tr key={monitor._id} className="hover:bg-[#1E1E1E]">
+                      <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate text-start">
+                        <a 
+                          href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="hover:text-[#E3CF20] hover:underline"
+                          title={monitor.url}
+                        >
+                          {monitor.url}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px] text-left">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          monitor.status === 'UP' 
+                            ? 'bg-green-900 text-green-300'
+                            : 'bg-red-900 text-red-300'
+                        }`}>
+                          {monitor.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px] text-left">
+                        {monitor.responseTime ? `${monitor.responseTime}ms` : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px] text-left">
+                        {monitor.lastChecked 
+                          ? formatDistanceToNow(new Date(monitor.lastChecked), { addSuffix: true })
+                          : 'Never'
+                        }
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px] text-left">
+                        {(() => {
+                          // Get interval from the monitor
+                          const interval = monitor.interval;
+                          
+                          // Special case for 'once' (interval = 0)
+                          if (interval === 0) {
+                            return 'Once';
+                          }
+                          
+                          if (isNaN(interval) || interval < 0) {
+                            return '5m'; // Default fallback
+                          }
+                          
+                          // Format based on minutes
+                          return interval < 60 
+                            ? `${interval}m` 
+                            : `${Math.floor(interval / 60)}h`;
+                        })()} 
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex flex-row items-center justify-end space-x-4">
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              openStatsDrawer(monitor);
+                            }}
+                            className="text-gray-400 hover:text-[#E3CF20] cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                            title="View Stats"
+                          >
+                            <BarChart2 size={20} strokeWidth={1.5} />
+                          </button>
+                          <button
+                            onClick={() => handleCheckAgain(monitor)}
+                            className="text-gray-400 hover:text-blue-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                            title="Check Again"
+                          >
+                            <RefreshCw size={20} strokeWidth={1.5} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingMonitor(monitor);
+                            }}
+                            className="text-gray-400 hover:text-green-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                            title="Edit Monitor"
+                          >
+                            <Edit2 size={20} strokeWidth={1.5} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteMonitor(monitor);
+                            }}
+                            className="text-gray-400 hover:text-red-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
+                            title="Delete Monitor"
+                          >
+                            <Trash2 size={20} strokeWidth={1.5} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 font-[IBM_Plex_Mono]">
                 {paginatedMonitors.map((monitor) => (
-                  <tr key={monitor._id} className="hover:bg-[#1E1E1E]">
-                    <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate text-start">
+                  <div key={monitor._id} className="bg-[#121212] border border-[#333333] rounded-lg p-4 relative">
+                    {/* URL and Status in header row */}
+                    <div className="flex justify-between items-center mb-3">
                       <a 
                         href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="hover:text-[#E3CF20] hover:underline"
+                        className="text-white hover:text-[#E3CF20] hover:underline font-medium text-sm max-w-[240px] truncate"
                         title={monitor.url}
                       >
                         {monitor.url}
                       </a>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px] text-left">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        monitor.status === 'UP' 
-                          ? 'bg-green-900 text-green-300'
-                          : 'bg-red-900 text-red-300'
-                      }`}>
-                        {monitor.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[160px] text-left">
-                      {monitor.responseTime ? `${monitor.responseTime}ms` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[150px] text-left">
-                      {monitor.lastChecked 
-                        ? formatDistanceToNow(new Date(monitor.lastChecked), { addSuffix: true })
-                        : 'Never'
-                      }
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 w-[100px] text-left">
-                      {(() => {
-                        // Get interval from the monitor
-                        const interval = monitor.interval;
-                        
-                        // Special case for 'once' (interval = 0)
-                        if (interval === 0) {
-                          return 'Once';
-                        }
-                        
-                        if (isNaN(interval) || interval < 0) {
-                          return '5m'; // Default fallback
-                        }
-                        
-                        // Format based on minutes
-                        return interval < 60 
-                          ? `${interval}m` 
-                          : `${Math.floor(interval / 60)}h`;
-                      })()} 
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex flex-row items-center justify-end space-x-4">
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openStatsDrawer(monitor);
-                          }}
-                          className="text-gray-400 hover:text-[#E3CF20] cursor-pointer font-[Fira_Sans] flex items-center justify-center"
-                          title="View Stats"
-                        >
-                          <BarChart2 size={20} strokeWidth={1.5} />
-                        </button>
-                        <button
-                          onClick={() => handleCheckAgain(monitor)}
-                          className="text-gray-400 hover:text-blue-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
-                          title="Check Again"
-                        >
-                          <RefreshCw size={20} strokeWidth={1.5} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingMonitor(monitor);
-                          }}
-                          className="text-gray-400 hover:text-green-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
-                          title="Edit Monitor"
-                        >
-                          <Edit2 size={20} strokeWidth={1.5} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeleteMonitor(monitor);
-                          }}
-                          className="text-gray-400 hover:text-red-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
-                          title="Delete Monitor"
-                        >
-                          <Trash2 size={20} strokeWidth={1.5} />
-                        </button>
+                      <div className="flex items-center">
+                        <span className={`mr-3 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          monitor.status === 'UP' 
+                            ? 'bg-green-900 text-green-300'
+                            : 'bg-red-900 text-red-300'
+                        }`}>
+                          {monitor.status}
+                        </span>
+                        <div className="relative">
+                          <button
+                            onClick={() => setMobileActionMenu(mobileActionMenu === monitor._id ? null : monitor._id)}
+                            className="text-gray-400 hover:text-[#E3CF20] p-1 mobile-action-button"
+                            aria-label="Monitor actions"
+                          >
+                            <MoreVertical size={20} strokeWidth={1.5} />
+                          </button>
+                          
+                          {mobileActionMenu === monitor._id && (
+                            <div className="absolute right-0 top-full mt-1 bg-[#1E1E1E] border border-[#333333] rounded-md shadow-lg z-10 w-40 mobile-action-menu">
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  openStatsDrawer(monitor);
+                                  setMobileActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                              >
+                                <BarChart2 size={16} className="mr-2" /> View Stats
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleCheckAgain(monitor);
+                                  setMobileActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                              >
+                                <RefreshCw size={16} className="mr-2" /> Check Again
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingMonitor(monitor);
+                                  setMobileActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                              >
+                                <Edit2 size={16} className="mr-2" /> Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeleteMonitor(monitor);
+                                  setMobileActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                              >
+                                <Trash2 size={16} className="mr-2" /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                    
+                    {/* Monitor details */}
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
+                      <div>
+                        <span className="block text-gray-500 mb-1">Response Time</span>
+                        <span>{monitor.responseTime ? `${monitor.responseTime}ms` : 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-500 mb-1">Last Checked</span>
+                        <span>
+                          {monitor.lastChecked 
+                            ? formatDistanceToNow(new Date(monitor.lastChecked), { addSuffix: true })
+                            : 'Never'
+                          }
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-500 mb-1">Check Interval</span>
+                        <span>
+                          {(() => {
+                            const interval = monitor.interval;
+                            if (interval === 0) return 'Once';
+                            if (isNaN(interval) || interval < 0) return '5m';
+                            return interval < 60 
+                              ? `${interval}m` 
+                              : `${Math.floor(interval / 60)}h`;
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
         )}
 
