@@ -301,7 +301,7 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
           </button>
         </div>
 
-        <div className="overflow-y-auto overflow-x-hidden flex-grow px-2">
+        <div className="overflow-y-auto overflow-x-hidden flex-grow px-4">
           <div className="mb-4">
             <h3 className="font-medium mb-1 text-white">URL</h3>
             <p className="text-gray-300 break-all">{monitor.url}</p>
@@ -395,12 +395,25 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="timestamp" 
-                    hide={isMobile}
+                    hide={true}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                  <YAxis width={20} />
+                  <YAxis 
+                    width={20} 
+                    hide={true}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="responseTime" stroke="#8884d8" name="Response Time (ms)" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="responseTime" 
+                    stroke="#8884d8" 
+                    name="Response Time (ms)"
+                    dot={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -417,12 +430,27 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="timestamp" 
-                    hide={isMobile}
+                    hide={true}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                  <YAxis domain={[0, 1]} ticks={[0, 1]} width={20} />
+                  <YAxis 
+                    domain={[0, 1]} 
+                    ticks={[0, 1]} 
+                    width={20}
+                    hide={true}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip />
                   <Legend />
-                  <Line type="stepAfter" dataKey="status" stroke="#82ca9d" name="Status (Up/Down)" />
+                  <Line 
+                    type="stepAfter" 
+                    dataKey="status" 
+                    stroke="#82ca9d" 
+                    name="Status (Up/Down)"
+                    dot={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
