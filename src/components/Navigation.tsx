@@ -4,9 +4,10 @@ import Link from "next/link";
 import AnimatedLogo from "./AnimatedLogo";
 import { User, Menu, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import Spinner from "./ui/Spinner";
 
 export default function Navigation() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +41,12 @@ export default function Navigation() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center">
-            {session ? (
+            {status === "loading" ? (
+              <div className="flex items-center justify-center px-4">
+                <Spinner size="md" color="#E3CF20" />
+                <span className="ml-2 text-gray-400">Loading...</span>
+              </div>
+            ) : session ? (
               <div className="flex items-center gap-2">
                 <span className="text-md tracking-wider text-gray-400">
                   {session.user?.email}
@@ -84,7 +90,11 @@ export default function Navigation() {
 
           {/* Mobile Menu Icon */}
           <div className="flex md:hidden items-center">
-            {session ? (
+            {status === "loading" ? (
+              <div className="flex items-center px-2">
+                <Spinner size="sm" color="#E3CF20" />
+              </div>
+            ) : session ? (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowMobileMenu(!showMobileMenu)}
