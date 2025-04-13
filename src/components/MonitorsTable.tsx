@@ -459,15 +459,22 @@ export default function MonitorsTable() {
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-start">
                         <Globe className="text-[#E3CF20] mr-2 mt-0.5 flex-shrink-0" size={18} />
-                        <div>
+                        <div className={`text-start ${isMobile ? 'max-w-[80%] truncate' : 'w-full'}`}>
                           <a 
                             href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="font-medium text-white break-all hover:text-[#E3CF20] hover:underline"
+                            className={`font-medium text-white hover:text-[#E3CF20] hover:underline ${isMobile ? 'whitespace-nowrap overflow-hidden text-ellipsis block' : 'break-all w-full'}`}
                             title={monitor.url}
                           >
-                            {monitor.url.length > 25 ? monitor.url.substring(0, 25) + '...' : monitor.url}
+                            {isMobile 
+                              ? (monitor.url.length > 24 
+                                ? `${monitor.url.substring(0, 21)}...` 
+                                : monitor.url)
+                              : (monitor.url.length > 25 
+                                ? `${monitor.url.substring(0, 25)}...` 
+                                : monitor.url)
+                            }
                           </a>
                           <div className="flex items-center">
                             {!isMobile && (

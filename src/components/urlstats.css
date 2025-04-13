@@ -1,0 +1,38 @@
+/* Scrollbar styles for the UrlStatsDrawer */
+.urlstats-container {
+  scrollbar-width: thin;
+  scrollbar-color: #E3CF20 #171717;
+}
+
+/* For Webkit browsers */
+.urlstats-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.urlstats-container::-webkit-scrollbar-track {
+  background: #171717; /* Match the new background color */
+}
+
+.urlstats-container::-webkit-scrollbar-thumb {
+  background-color: #E3CF20; /* Accent color for the thumb */
+  border-radius: 4px;
+}
+
+.urlstats-container::-webkit-scrollbar-thumb:hover {
+  background-color: #F5E050; /* Lighter shade of the accent color for hover state */
+}
+
+/* URL link styling */
+.url-link {
+  transition: all 0.2s ease;
+  display: inline-block;
+  position: relative;
+}
+
+.url-link:hover {
+  color: #E3CF20;
+  text-decoration: underline;
+  text-decoration-color: #E3CF20;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+} 

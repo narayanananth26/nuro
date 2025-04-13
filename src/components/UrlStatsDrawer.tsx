@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { format, subDays } from 'date-fns';
 import type { UrlMonitor, MonitorLog } from '@/types/monitor';
 import { Download, ChevronDown, ChevronUp } from 'lucide-react';
+import './urlstats.css'; // Import the custom CSS file
 
 interface UrlStatsDrawerProps {
   monitor: UrlMonitor;
@@ -293,18 +294,18 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
     <div 
       ref={drawerRef}
       className={`
-        font-[Fira_Sans] bg-[#1E1E1E] shadow-xl overflow-hidden z-50 
-        ${isMobile ? 'border-t' : 'border-l'} border-[#333333]
+        font-[Fira_Sans] bg-[#171717] shadow-xl overflow-hidden z-50 
+        ${isMobile ? 'border-t' : 'border-l'} border-[#E3CF20]
       `}
       style={isMobile ? mobileDrawerStyles : desktopDrawerStyles}
     >
       {isMobile ? (
         <div 
-          className="absolute top-0 left-0 right-0 h-6 bg-[#262626] flex items-center justify-center cursor-row-resize touch-action-none"
+          className="absolute top-0 left-0 right-0 h-6 bg-[#212121] flex items-center justify-center cursor-row-resize touch-action-none"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
         >
-          <div className="w-10 h-1 bg-[#444] rounded-full" />
+          <div className="w-10 h-1 bg-[#E3CF20] rounded-full opacity-50" />
         </div>
       ) : (
         <div 
@@ -317,22 +318,29 @@ export default function UrlStatsDrawer({ monitor, onClose, timeRange, onTimeRang
       )}
 
       <div className={`h-full flex flex-col ${isMobile ? 'py-4 pt-8' : 'p-6'} overflow-hidden`}>
-        <div className="flex justify-between items-center mb-4 px-4">
-          <h2 className="text-xl font-semibold text-white uppercase border-b border-[#E3CF20]">
+        <div className="flex justify-center items-center mb-4 px-4 relative">
+          <h2 className="text-xl font-semibold text-white uppercase border-b border-[#E3CF20] text-center">
             Monitor Stats
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white absolute right-4"
           >
             ✕
           </button>
         </div>
 
-        <div className="overflow-y-auto overflow-x-hidden flex-grow px-4">
+        <div className="overflow-y-auto overflow-x-hidden flex-grow px-4 urlstats-container">
           <div className="mb-4">
             <h3 className="font-medium mb-1 text-white">URL</h3>
-            <p className="text-gray-300 break-all">{monitor.url}</p>
+            <a 
+              href={monitor.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-gray-300 break-all hover:text-[#E3CF20] hover:underline url-link"
+            >
+              {monitor.url}
+            </a>
           </div>
 
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 mb-4`}>
