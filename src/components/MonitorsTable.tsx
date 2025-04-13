@@ -50,9 +50,19 @@ export default function MonitorsTable() {
     // First filter out monitors with interval=0 (once)
     const filteredByInterval = monitors.filter(monitor => monitor.interval !== 0);
     
+    // Sort by lastChecked date (most recent first)
+    const sorted = [...filteredByInterval].sort((a, b) => {
+      // Handle case where lastChecked is undefined
+      if (!a.lastChecked) return 1; // a goes after b if a has no lastChecked
+      if (!b.lastChecked) return -1; // a goes before b if b has no lastChecked
+      
+      // Sort by most recent lastChecked date first
+      return new Date(b.lastChecked).getTime() - new Date(a.lastChecked).getTime();
+    });
+    
     return filterStatus === 'ALL' 
-      ? filteredByInterval 
-      : filteredByInterval.filter(monitor => monitor.status === filterStatus);
+      ? sorted 
+      : sorted.filter(monitor => monitor.status === filterStatus);
   }, [monitors, filterStatus]);
 
   const totalPages = useMemo(() => 
