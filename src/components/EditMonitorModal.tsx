@@ -21,12 +21,17 @@ export default function EditMonitorModal({ isOpen, onClose, monitor, onSave }: E
     if (monitor) {
       setUrl(monitor.url);
       
-      // Get interval from the most recent log or use monitor.interval
-      if (monitor.logs && monitor.logs.length > 0) {
-        const latestLog = monitor.logs[monitor.logs.length - 1];
-        setInterval(latestLog.interval);
-      } else if (typeof monitor.interval === 'number') {
+      // Set interval directly from monitor.interval if available
+      if (typeof monitor.interval === 'number' && monitor.interval >= 0) {
         setInterval(monitor.interval);
+      } else if (monitor.logs && monitor.logs.length > 0) {
+        // Fallback to logs if interval is not available
+        const latestLog = monitor.logs[monitor.logs.length - 1];
+        if (typeof latestLog.interval === 'number' && latestLog.interval >= 0) {
+          setInterval(latestLog.interval);
+        } else {
+          setInterval(5); // Default fallback
+        }
       } else {
         setInterval(5); // Default fallback
       }

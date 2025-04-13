@@ -162,14 +162,18 @@ export default function MonitorsTable() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to update monitor');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error || 'Failed to update monitor';
+        throw new Error(errorMessage);
+      }
 
+      await refreshMonitors();
       toast.success('Monitor updated successfully');
-      refreshMonitors();
       setEditingMonitor(null);
     } catch (error) {
       console.error('Error updating monitor:', error);
-      toast.error('Failed to update monitor');
+      toast.error(error instanceof Error ? error.message : 'Failed to update monitor');
     }
   }, [editingMonitor, refreshMonitors]);
 
