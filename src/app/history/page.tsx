@@ -6,7 +6,7 @@ import useSWR from 'swr';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Download } from 'lucide-react';
+import { Download, Globe, Timer, Clock, RefreshCw, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import './history.css';
 import PageLoading from '@/components/ui/PageLoading';
 import Skeleton, { TextSkeleton, TableRowSkeleton } from '@/components/ui/skeleton';
@@ -395,7 +395,7 @@ export default function HistoryPage() {
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-[#121212] divide-y divide-[#333333] font-[IBM_Plex_Mono]">
+                      <tbody className="bg-[#121212] divide-y divide-[#333333] ">
                         {paginatedLogs.map((log: MonitorLog, index: number) => (
                           <tr key={`${log.monitorId}-${log.timestamp}-${index}`} className="hover:bg-[#1E1E1E]">
                             <td className="px-6 py-4 text-sm font-medium text-white max-w-[250px] truncate">
@@ -451,40 +451,34 @@ export default function HistoryPage() {
                   ) : (
                     <div className="grid grid-cols-1 gap-4 font-[IBM_Plex_Mono]">
                       {paginatedLogs.map((log: MonitorLog, index: number) => (
-                        <div key={`${log.monitorId}-${log.timestamp}-${index}`} className="bg-[#121212] border border-[#333333] rounded-lg p-4 relative">
-                          <div className="flex justify-between items-center mb-3">
-                            <a 
-                              href={log.url.startsWith('http') ? log.url : `https://${log.url}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-white hover:text-[#E3CF20] hover:underline font-medium text-sm max-w-[240px] truncate"
-                              title={log.url}
-                            >
-                              {log.url}
-                            </a>
-                            <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              log.status === 'UP' 
-                                ? 'bg-green-900 text-green-300'
-                                : 'bg-red-900 text-red-300'
-                            }`}>
-                              {log.status}
-                            </span>
+                        <div key={`${log.monitorId}-${log.timestamp}-${index}`} className="p-4 border border-[#333333] bg-[#1E1E1E] rounded-md">
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="flex items-start">
+                              <Globe className="text-[#E3CF20] mr-2 mt-0.5 flex-shrink-0" size={18} />
+                              <div>
+                                <a 
+                                  href={log.url.startsWith('http') ? log.url : `https://${log.url}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-white break-all hover:text-[#E3CF20] hover:underline"
+                                  title={log.url}
+                                >
+                                  {log.url.length > 25 ? log.url.substring(0, 25) + '...' : log.url}
+                                </a>
+                              </div>
+                            </div>
                           </div>
                           
-                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
-                            <div>
-                              <span className="block text-gray-500 mb-1">Response Time</span>
-                              <span>{log.responseTime}ms</span>
+                          <div className="mt-2 text-md flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Timer size={16} className="text-[#E3CF20] mr-2" />
+                              <div className="text-white">
+                                {log.responseTime}ms
+                              </div>
                             </div>
-                            <div>
-                              <span className="block text-gray-500 mb-1">Timestamp</span>
-                              <span>
-                                {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="block text-gray-500 mb-1">Check Interval</span>
-                              <span>
+                            <div className="flex items-center">
+                              <RefreshCw size={16} className="text-[#E3CF20] mr-2" />
+                              <div className="text-gray-400">
                                 {(() => {
                                   const interval = log.monitorInterval;
                                   if (interval === 0) return 'Once';
@@ -493,8 +487,25 @@ export default function HistoryPage() {
                                     ? `${interval}m` 
                                     : `${Math.floor(interval / 60)}h`;
                                 })()}
-                              </span>
+                              </div>
                             </div>
+                          </div>
+                          
+                          <div className="mt-2 text-md text-gray-400 flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Clock size={16} className="text-[#E3CF20] mr-2" />
+                              <div className="text-start">
+                                {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                              </div>
+                            </div>
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              log.status === 'UP' 
+                                ? 'bg-green-900 text-green-300 items-center'
+                                : 'bg-red-900 text-red-300 items-center'
+                            }`}>
+                              {log.status === 'UP' ? <ArrowUpCircle size={14} className="mr-1" /> : <ArrowDownCircle size={14} className="mr-1" />}
+                              {log.status}
+                            </span>
                           </div>
                         </div>
                       ))}

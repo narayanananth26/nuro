@@ -1,4 +1,4 @@
-'use client';
+  'use client';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import useSWR from 'swr';
@@ -8,7 +8,7 @@ import { usePaginationContext } from '@/contexts/PaginationContext';
 import type { UrlMonitor, MonitorLog } from '@/types/monitor';
 import EditMonitorModal from './EditMonitorModal';
 import DeleteMonitorModal from './DeleteMonitorModal';
-import { BarChart2, Edit2, Trash2, RefreshCw, MoreVertical } from 'lucide-react';
+import { BarChart2, Edit2, Trash2, RefreshCw, MoreVertical, Globe, ArrowUpCircle, ArrowDownCircle, Timer, Clock } from 'lucide-react';
 import PageLoading from './ui/PageLoading';
 import LoadingButton from './ui/LoadingButton';
 
@@ -50,19 +50,9 @@ export default function MonitorsTable() {
     // First filter out monitors with interval=0 (once)
     const filteredByInterval = monitors.filter(monitor => monitor.interval !== 0);
     
-    // Sort by lastChecked date (most recent first)
-    const sorted = [...filteredByInterval].sort((a, b) => {
-      // Handle case where lastChecked is undefined
-      if (!a.lastChecked) return 1; // a goes after b if a has no lastChecked
-      if (!b.lastChecked) return -1; // a goes before b if b has no lastChecked
-      
-      // Sort by most recent lastChecked date first
-      return new Date(b.lastChecked).getTime() - new Date(a.lastChecked).getTime();
-    });
-    
     return filterStatus === 'ALL' 
-      ? sorted 
-      : sorted.filter(monitor => monitor.status === filterStatus);
+      ? filteredByInterval 
+      : filteredByInterval.filter(monitor => monitor.status === filterStatus);
   }, [monitors, filterStatus]);
 
   const totalPages = useMemo(() => 
@@ -370,10 +360,10 @@ export default function MonitorsTable() {
                           href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="hover:text-[#E3CF20] hover:underline"
+                          className="text-white hover:text-[#E3CF20] hover:underline font-medium text-sm max-w-[240px] truncate"
                           title={monitor.url}
                         >
-                          {monitor.url}
+                          {monitor.url.length > 25 ? monitor.url.substring(0, 25) + '...' : monitor.url}
                         </a>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm w-[100px] text-left">
@@ -465,100 +455,98 @@ export default function MonitorsTable() {
             ) : (
               <div className="grid grid-cols-1 gap-4 font-[IBM_Plex_Mono]">
                 {paginatedMonitors.map((monitor) => (
-                  <div key={monitor._id} className="bg-[#121212] border border-[#333333] rounded-lg p-4 relative">
-                    {/* URL and Status in header row */}
-                    <div className="flex justify-between items-center mb-3">
-                      <a 
-                        href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-white hover:text-[#E3CF20] hover:underline font-medium text-sm max-w-[240px] truncate"
-                        title={monitor.url}
-                      >
-                        {monitor.url}
-                      </a>
-                      <div className="flex items-center">
-                        <span className={`mr-3 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          monitor.status === 'UP' 
-                            ? 'bg-green-900 text-green-300'
-                            : 'bg-red-900 text-red-300'
-                        }`}>
-                          {monitor.status}
-                        </span>
-                        <div className="relative">
-                          <button
-                            onClick={() => setMobileActionMenu(mobileActionMenu === monitor._id ? null : monitor._id)}
-                            className="text-gray-400 hover:text-[#E3CF20] p-1 mobile-action-button"
-                            aria-label="Monitor actions"
+                  <div key={monitor._id} className="p-4 border border-[#333333] bg-[#1E1E1E] rounded-md">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-start">
+                        <Globe className="text-[#E3CF20] mr-2 mt-0.5 flex-shrink-0" size={18} />
+                        <div>
+                          <a 
+                            href={monitor.url.startsWith('http') ? monitor.url : `https://${monitor.url}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-medium text-white break-all hover:text-[#E3CF20] hover:underline"
+                            title={monitor.url}
                           >
-                            <MoreVertical size={20} strokeWidth={1.5} />
-                          </button>
-                          
-                          {mobileActionMenu === monitor._id && (
-                            <div className="absolute right-0 top-full mt-1 bg-[#1E1E1E] border border-[#333333] rounded-md shadow-lg z-10 w-40 mobile-action-menu">
-                              <button
-                                onClick={() => {
-                                  handleCheckAgain(monitor);
-                                  setMobileActionMenu(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
-                              >
-                                <RefreshCw size={16} className="mr-2" /> Check Again
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  openStatsDrawer(monitor);
-                                  setMobileActionMenu(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
-                              >
-                                <BarChart2 size={16} className="mr-2" /> View Stats
-                              </button>
-                              
-                              <button
-                                onClick={() => {
-                                  setEditingMonitor(monitor);
-                                  setMobileActionMenu(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
-                              >
-                                <Edit2 size={16} className="mr-2" /> Edit
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setDeleteMonitor(monitor);
-                                  setMobileActionMenu(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
-                              >
-                                <Trash2 size={16} className="mr-2" /> Delete
-                              </button>
-                            </div>
-                          )}
+                            {monitor.url.length > 25 ? monitor.url.substring(0, 25) + '...' : monitor.url}
+                          </a>
+                          <div className="flex items-center">
+                            {!isMobile && (
+                              <span className={`mr-3 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                monitor.status === 'UP' 
+                                  ? 'bg-green-900 text-green-300'
+                                  : 'bg-red-900 text-red-300'
+                              }`}>
+                                {monitor.status}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                      </div>
+                      <div className="relative">
+                        <button
+                          onClick={() => setMobileActionMenu(mobileActionMenu === monitor._id ? null : monitor._id)}
+                          className="text-gray-400 hover:text-[#E3CF20] p-1 mobile-action-button"
+                          aria-label="Monitor actions"
+                        >
+                          <MoreVertical size={20} strokeWidth={1.5} />
+                        </button>
+                        
+                        {mobileActionMenu === monitor._id && (
+                          <div className="absolute right-0 top-full mt-1 bg-[#1E1E1E] border border-[#333333] rounded-md shadow-lg z-10 w-40 mobile-action-menu">
+                            <button
+                              onClick={() => {
+                                handleCheckAgain(monitor);
+                                setMobileActionMenu(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                            >
+                              <RefreshCw size={16} className="mr-2" /> Check Again
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                openStatsDrawer(monitor);
+                                setMobileActionMenu(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                            >
+                              <BarChart2 size={16} className="mr-2" /> View Stats
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                setEditingMonitor(monitor);
+                                setMobileActionMenu(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                            >
+                              <Edit2 size={16} className="mr-2" /> Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteMonitor(monitor);
+                                setMobileActionMenu(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                            >
+                              <Trash2 size={16} className="mr-2" /> Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
-                    {/* Monitor details */}
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
-                      <div>
-                        <span className="block text-gray-500 mb-1">Response Time</span>
-                        <span>{monitor.responseTime ? `${monitor.responseTime}ms` : 'N/A'}</span>
+                    <div className="mt-2 text-md flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Timer size={16} className="text-[#E3CF20] mr-2" />
+                        <div className="text-white">
+                          {monitor.responseTime ? `${monitor.responseTime}ms` : 'N/A'}
+                        </div>
                       </div>
-                      <div>
-                        <span className="block text-gray-500 mb-1">Last Checked</span>
-                        <span>
-                          {monitor.lastChecked 
-                            ? formatDistanceToNow(new Date(monitor.lastChecked), { addSuffix: true })
-                            : 'Never'
-                          }
-                        </span>
-                      </div>
-                      <div>
-                        <span className="block text-gray-500 mb-1">Check Interval</span>
-                        <span>
+                      <div className="flex items-center">
+                        <RefreshCw size={16} className="text-[#E3CF20] mr-2" />
+                        <div className="text-gray-400">
                           {(() => {
                             const interval = monitor.interval;
                             if (interval === 0) return 'Once';
@@ -567,8 +555,29 @@ export default function MonitorsTable() {
                               ? `${interval}m` 
                               : `${Math.floor(interval / 60)}h`;
                           })()}
-                        </span>
+                        </div>
                       </div>
+                    </div>
+                    
+                    <div className="mt-2 text-md text-gray-400 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Clock size={16} className="text-[#E3CF20] mr-2" />
+                        <div className="text-start">
+                          {monitor.lastChecked 
+                            ? formatDistanceToNow(new Date(monitor.lastChecked), { addSuffix: true })
+                            : 'Never'
+                          }
+                        </div>
+                      </div>
+                      {isMobile && (
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          monitor.status === 'UP' 
+                            ? 'bg-green-900 text-green-300'
+                            : 'bg-red-900 text-red-300'
+                        }`}>
+                          {monitor.status}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}

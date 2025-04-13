@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { usePaginationContext } from '@/contexts/PaginationContext';
 import { mutate } from 'swr';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Clock, ArrowUpCircle, ArrowDownCircle, Globe, Timer } from 'lucide-react';
 import LoadingButton from './ui/LoadingButton';
 import Skeleton, { CardSkeleton } from './ui/skeleton';
 
@@ -385,26 +385,50 @@ export default function UrlMonitorForm() {
 
           {Object.entries(healthCheckResults).length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-medium mb-2 text-white">Check Results</h3>
-              <div className="space-y-4">
+              <h3 className="text-md font-medium mb-2 text-white text-start">Check Results</h3>
+              <div className="space-y-4 font-[IBM_Plex_Mono] text-sm">
                 {Object.entries(healthCheckResults).map(([url, result]) => (
                   <div key={url} className="p-4 border border-[#333333] bg-[#1E1E1E] rounded-md">
                     <div className={`${isMobile ? 'flex flex-col space-y-2' : 'flex justify-between items-center'}`}>
-                      <div>
-                        <h4 className="font-medium text-white break-all">{result.originalUrl || url}</h4>
-                        <p className={`mt-1 text-md ${
-                          result.status < 400 ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          Status: {result.status < 400 ? 'UP' : 'DOWN'}
-                        </p>
+                      <div className="flex items-start">
+                        <Globe className="text-[#E3CF20] mr-2 mt-0.5 flex-shrink-0" size={18} />
+                        <div>
+                          <div className="font-medium text-white break-all flex items-center flex-wrap">
+                            <a 
+                              href={result.originalUrl?.startsWith('http') 
+                                ? result.originalUrl 
+                                : `https://${result.originalUrl || url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mr-2 hover:text-[#E3CF20] hover:underline"
+                            >
+                              {result.originalUrl || url}
+                            </a>
+                            {result.status < 400 ? (
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900 text-green-300 items-center">
+                                <ArrowUpCircle size={14} className="mr-1" />
+                                UP
+                              </span>
+                            ) : (
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-900 text-red-300 items-center">
+                                <ArrowDownCircle size={14} className="mr-1" />
+                                DOWN
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-md text-white">
+                      <div className="text-md text-white flex items-center">
+                        <Timer size={16} className="text-[#E3CF20] mr-2" />
                         Response Time: {result.responseTime}ms
                       </div>
                     </div>
-                    <p className="mt-2 text-md text-gray-400">
+                    <div className="mt-2 text-md text-gray-400 flex items-center">
+                      <Clock size={16} className="text-[#E3CF20] mr-2" />
+                      <div className='w-full text-start'>
                       Last checked: {new Date(result.timestamp).toLocaleString()}
-                    </p>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
