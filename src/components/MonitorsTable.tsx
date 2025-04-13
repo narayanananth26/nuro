@@ -235,8 +235,16 @@ export default function MonitorsTable() {
         throw new Error('Failed to update monitor logs');
       }
       
+      const updateData = await updateResponse.json();
+      
       toast.dismiss();
       toast.success(`${monitor.url} checked successfully`);
+      
+      // Show additional message if this was a one-time monitor
+      if (updateData.isOneTimeDeleted) {
+        toast.success(`${monitor.url} was a one-time check and has been removed`);
+      }
+      
       refreshMonitors();
     } catch (error) {
       console.error('Error checking URL:', error);

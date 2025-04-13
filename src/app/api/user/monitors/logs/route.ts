@@ -78,7 +78,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Monitor not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, monitor });
+    let deleted = false;
+    // If this is a one-time monitor (interval=0), delete it after checking
+    if (monitor.interval === 0) {
+      await UrlMonitor.findByIdAndDelete(monitor._id);
+      deleted = true;
+      console.log(`API: Deleted one-time monitor for URL: ${monitor.url}`);
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      monitor, 
+      isOneTimeDeleted: deleted 
+    });
   } catch (error) {
     console.error('Error updating monitor logs:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
