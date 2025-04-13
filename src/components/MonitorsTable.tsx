@@ -47,9 +47,12 @@ export default function MonitorsTable() {
   const filteredMonitors = useMemo(() => {
     if (!monitors) return [];
     
+    // First filter out monitors with interval=0 (once)
+    const filteredByInterval = monitors.filter(monitor => monitor.interval !== 0);
+    
     return filterStatus === 'ALL' 
-      ? monitors 
-      : monitors.filter(monitor => monitor.status === filterStatus);
+      ? filteredByInterval 
+      : filteredByInterval.filter(monitor => monitor.status === filterStatus);
   }, [monitors, filterStatus]);
 
   const totalPages = useMemo(() => 
@@ -235,16 +238,8 @@ export default function MonitorsTable() {
         throw new Error('Failed to update monitor logs');
       }
       
-      const updateData = await updateResponse.json();
-      
       toast.dismiss();
       toast.success(`${monitor.url} checked successfully`);
-      
-      // Show additional message if this was a one-time monitor
-      if (updateData.isOneTimeDeleted) {
-        toast.success(`${monitor.url} was a one-time check and has been removed`);
-      }
-      
       refreshMonitors();
     } catch (error) {
       console.error('Error checking URL:', error);

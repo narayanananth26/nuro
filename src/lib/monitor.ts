@@ -32,12 +32,6 @@ async function logMonitorResult(monitor: any, status: "UP" | "DOWN" | "UNKNOWN",
   monitor.lastChecked = now;
 
   await monitor.save();
-  
-  // If this is a one-time check (interval=0) and it has been checked now, delete it
-  if (monitor.interval === 0) {
-    await UrlMonitor.findByIdAndDelete(monitor._id);
-    console.log(`Deleted one-time monitor for URL: ${monitor.url}`);
-  }
 }
 
 export async function handlePing(monitor: any) {
