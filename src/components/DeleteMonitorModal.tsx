@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
 import { UrlMonitor } from '@/types/monitor';
+import LoadingButton from './ui/LoadingButton';
 
 interface DeleteMonitorModalProps {
   isOpen: boolean;
@@ -41,19 +42,21 @@ export default function DeleteMonitorModal({ isOpen, onClose, monitor, onDelete 
         </p>
         
         <div className="flex justify-end space-x-3 pt-2">
-          <button
+          <LoadingButton
             onClick={onClose}
-            className="px-4 py-2 bg-[#2D2D2D] text-white rounded-md hover:bg-[#3D3D3D] focus:outline-none"
+            variant="secondary"
+            size="md"
           >
             Cancel
-          </button>
-          <button
+          </LoadingButton>
+          <LoadingButton
             onClick={handleDelete}
-            disabled={isDeleting}
-            className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isDeleting}
+            variant="danger"
+            size="md"
           >
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </button>
+            Delete
+          </LoadingButton>
         </div>
       </div>
     </Modal>

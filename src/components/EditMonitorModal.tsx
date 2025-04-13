@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { UrlMonitor } from '@/types/monitor';
+import LoadingButton from './ui/LoadingButton';
 
 interface EditMonitorModalProps {
   isOpen: boolean;
@@ -90,20 +91,22 @@ export default function EditMonitorModal({ isOpen, onClose, monitor, onSave }: E
         </div>
         
         <div className="flex justify-end space-x-3 pt-2">
-          <button
+          <LoadingButton
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-[#2D2D2D] text-white rounded-md hover:bg-[#3D3D3D] focus:outline-none"
+            variant="secondary"
+            size="md"
           >
             Cancel
-          </button>
-          <button
+          </LoadingButton>
+          <LoadingButton
             type="submit"
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-[#E3CF20] text-[#121212] font-medium rounded-md hover:bg-[#F0E867] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isSubmitting}
+            variant="primary"
+            size="md"
           >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </button>
+            Save Changes
+          </LoadingButton>
         </div>
       </form>
     </Modal>

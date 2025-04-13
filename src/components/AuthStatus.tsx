@@ -2,12 +2,14 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { TextSkeleton } from './ui/skeleton';
+import LoadingButton from './ui/LoadingButton';
 
 export default function AuthStatus() {
   const { data: session, status } = useSession();
 
   if (status === 'loading') {
-    return <div>Loading...</div>;
+    return <TextSkeleton lines={1} className="w-48" />;
   }
 
   if (session) {
@@ -22,12 +24,14 @@ export default function AuthStatus() {
         >
           Dashboard
         </Link>
-        <button
+        <LoadingButton
           onClick={() => signOut()}
-          className="text-sm text-red-600 hover:text-red-500"
+          variant="danger"
+          size="sm"
+          className="text-sm"
         >
           Sign out
-        </button>
+        </LoadingButton>
       </div>
     );
   }

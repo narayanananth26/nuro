@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import LoadingButton from './ui/LoadingButton';
+import { TextSkeleton } from './ui/skeleton';
 
 interface HealthCheckResult {
   status: number;
@@ -60,18 +62,26 @@ export default function UrlHealthCheck() {
             className="w-full hover:border-[#E3CF20]"
           />
         </div>
-        <button
+        <LoadingButton
           type="submit"
-          disabled={loading}
-          className="w-full font-medium bg-[#E3CF20] text-[#121212] py-2 px-4 rounded-lg hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed uppercase"
+          loading={loading}
+          variant="primary"
+          size="md"
+          className="w-full font-medium uppercase"
         >
-          {loading ? 'Checking...' : 'Check Health'}
-        </button>
+          Check Health
+        </LoadingButton>
       </form>
 
       {error && (
         <div className="mt-4 p-4 bg-red-900 text-red-300 rounded-lg">
           {error}
+        </div>
+      )}
+
+      {loading && !result && (
+        <div className="mt-6">
+          <TextSkeleton lines={3} className="p-6 bg-[#1E1E1E] border border-[#333333] rounded-lg" />
         </div>
       )}
 

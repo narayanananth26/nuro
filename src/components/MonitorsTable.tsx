@@ -9,6 +9,8 @@ import type { UrlMonitor, MonitorLog } from '@/types/monitor';
 import EditMonitorModal from './EditMonitorModal';
 import DeleteMonitorModal from './DeleteMonitorModal';
 import { BarChart2, Edit2, Trash2, RefreshCw, MoreVertical } from 'lucide-react';
+import PageLoading from './ui/PageLoading';
+import LoadingButton from './ui/LoadingButton';
 
 type FilterStatus = 'ALL' | 'UP' | 'DOWN';
 const ITEMS_PER_PAGE = 5;
@@ -30,6 +32,7 @@ export default function MonitorsTable() {
   const [drawerWidth, setDrawerWidth] = useState(600);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActionMenu, setMobileActionMenu] = useState<string | null>(null);
+  const [checkingUrl, setCheckingUrl] = useState<string | null>(null);
   
   // Get the pagination context
   const { monitorsPaginationResetTrigger } = usePaginationContext();
@@ -192,6 +195,7 @@ export default function MonitorsTable() {
 
   const handleCheckAgain = useCallback(async (monitor: UrlMonitor) => {
     try {
+      setCheckingUrl(monitor._id);
       toast.loading(`Checking ${monitor.url}...`);
       
       // First check the URL
@@ -234,6 +238,8 @@ export default function MonitorsTable() {
       console.error('Error checking URL:', error);
       toast.dismiss();
       toast.error('Failed to check URL');
+    } finally {
+      setCheckingUrl(null);
     }
   }, [refreshMonitors]);
 
@@ -249,7 +255,7 @@ export default function MonitorsTable() {
   }, []);
 
   if (error) return <div className="text-red-500">Failed to load monitors</div>;
-  if (!monitors) return <div>Loading...</div>;
+  if (!monitors) return <PageLoading type="table" className="p-4" />;
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
@@ -393,6 +399,16 @@ export default function MonitorsTable() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex flex-row items-center justify-end space-x-4">
+                        <LoadingButton
+                            onClick={() => handleCheckAgain(monitor)}
+                            loading={checkingUrl === monitor._id}
+                            variant="secondary"
+                            size="sm"
+                            className="mr-3"
+                            title="Check again"
+                          >
+                            <RefreshCw size={16} />
+                          </LoadingButton>
                           <button 
                             onClick={(e) => {
                               e.preventDefault();
@@ -404,13 +420,7 @@ export default function MonitorsTable() {
                           >
                             <BarChart2 size={20} strokeWidth={1.5} />
                           </button>
-                          <button
-                            onClick={() => handleCheckAgain(monitor)}
-                            className="text-gray-400 hover:text-blue-500 cursor-pointer font-[Fira_Sans] flex items-center justify-center"
-                            title="Check Again"
-                          >
-                            <RefreshCw size={20} strokeWidth={1.5} />
-                          </button>
+                          
                           <button
                             onClick={() => {
                               setEditingMonitor(monitor);
@@ -470,6 +480,15 @@ export default function MonitorsTable() {
                           {mobileActionMenu === monitor._id && (
                             <div className="absolute right-0 top-full mt-1 bg-[#1E1E1E] border border-[#333333] rounded-md shadow-lg z-10 w-40 mobile-action-menu">
                               <button
+                                onClick={() => {
+                                  handleCheckAgain(monitor);
+                                  setMobileActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
+                              >
+                                <RefreshCw size={16} className="mr-2" /> Check Again
+                              </button>
+                              <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -480,15 +499,7 @@ export default function MonitorsTable() {
                               >
                                 <BarChart2 size={16} className="mr-2" /> View Stats
                               </button>
-                              <button
-                                onClick={() => {
-                                  handleCheckAgain(monitor);
-                                  setMobileActionMenu(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#333333] flex items-center"
-                              >
-                                <RefreshCw size={16} className="mr-2" /> Check Again
-                              </button>
+                              
                               <button
                                 onClick={() => {
                                   setEditingMonitor(monitor);

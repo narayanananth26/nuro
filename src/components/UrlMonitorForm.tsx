@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import { usePaginationContext } from '@/contexts/PaginationContext';
 import { mutate } from 'swr';
 import { Trash2 } from 'lucide-react';
+import LoadingButton from './ui/LoadingButton';
+import Skeleton, { CardSkeleton } from './ui/skeleton';
 
 interface HealthCheckResult {
   status: number;
@@ -19,11 +21,12 @@ interface UrlInput {
 }
 
 export default function UrlMonitorForm() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [urls, setUrls] = useState<UrlInput[]>([{ url: '', interval: '5m' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [healthCheckResults, setHealthCheckResults] = useState<Record<string, HealthCheckResult>>({});
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Get the pagination context
   const { resetMonitorsPagination } = usePaginationContext();
@@ -43,6 +46,15 @@ export default function UrlMonitorForm() {
     return () => {
       window.removeEventListener('resize', checkMobile);
     };
+  }, []);
+
+  // Simulate loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAddUrl = () => {
@@ -253,111 +265,152 @@ export default function UrlMonitorForm() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4 text-md">
-        {urls.map((url, index) => (
-          <div key={index} className={`${isMobile ? 'flex flex-col space-y-4' : 'flex gap-4 items-end'}`}>
-            <div className="flex-1">
-              <label htmlFor={`url-${index}`} className="block font-medium text-white text-start">
-                Website URL
-              </label>
-              <input
-                type="url"
-                id={`url-${index}`}
-                value={url.url}
-                onChange={(e) => handleUrlChange(index, 'url', e.target.value)}
-                placeholder="https://example.com"
-                required
-                className="mt-1 block w-full hover:border-[#E3CF20]"
-              />
-            </div>
-
-            <div className={`${isMobile ? 'flex justify-between items-end' : 'flex-1'}`}>
-              <div className={isMobile ? 'flex-1 mr-2' : 'w-full'}>
-                <label htmlFor={`interval-${index}`} className="block font-medium text-white text-start">
-                  Check Interval
-                </label>
-                <select
-                  id={`interval-${index}`}
-                  value={url.interval}
-                  onChange={(e) => handleUrlChange(index, 'interval', e.target.value)}
-                  className="mt-1 block w-full hover:border-[#E3CF20] custom-select min-w-[200px]"
-                  suppressHydrationWarning
-                >
-                  <option value="once">Once (no monitoring)</option>
-                  <option value="5m">5 minutes</option>
-                  <option value="10m">10 minutes</option>
-                  <option value="30m">30 minutes</option>
-                  <option value="1h">1 hour</option>
-                </select>
+      {isLoading ? (
+        // Skeleton loading state
+        <div className="space-y-4">
+          {Array.from({ length: 1 }).map((_, index) => (
+            <div key={index} className={`${isMobile ? 'flex flex-col space-y-4' : 'flex gap-4 items-end'}`}>
+              <div className="flex-1">
+                <Skeleton width="100px" height="20px" className="mb-2" />
+                <Skeleton width="100%" height="40px" />
               </div>
               
-              <div className={`${isMobile ? 'flex items-end pb-2 ml-2' : 'flex items-center h-10'}`}>
-                {index > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveUrl(index)}
-                    className="text-red-400 hover:text-red-300 rounded-md flex items-center justify-center w-10 h-10"
-                    aria-label="Remove URL"
-                  >
-                    <Trash2 size={20} strokeWidth={1.5} />
-                  </button>
-                )}
-                {index === 0 && !isMobile && <div className="w-10 h-10"></div>}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex gap-4'}`}>
-          <button
-            type="button"
-            onClick={handleAddUrl}
-            className={`${isMobile ? 'w-full' : ''} px-4 py-2 text-md font-medium text-[#E3CF20] hover:text-[#d4c01c] border border-[#E3CF20] rounded-md hover:bg-[#2D2D2D] flex items-center justify-center`}
-            suppressHydrationWarning
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-              <line x1="12" y1="5" x2="12" y2="19" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
-              <line x1="5" y1="12" x2="19" y2="12" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
-            </svg> Add another URL
-          </button>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`${isMobile ? 'w-full' : 'flex-1'} px-4 py-2 text-md font-medium text-[#121212] uppercase bg-[#E3CF20] rounded-md hover:bg-[#d4c01c] disabled:opacity-50 disabled:cursor-not-allowed`}
-            suppressHydrationWarning
-          >
-            {submitButtonText}
-          </button>
-        </div>
-      </form>
-
-      {Object.entries(healthCheckResults).length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-medium mb-2 text-white">Check Results</h3>
-          <div className="space-y-4">
-            {Object.entries(healthCheckResults).map(([url, result]) => (
-              <div key={url} className="p-4 border border-[#333333] bg-[#1E1E1E] rounded-md">
-                <div className={`${isMobile ? 'flex flex-col space-y-2' : 'flex justify-between items-center'}`}>
-                  <div>
-                    <h4 className="font-medium text-white break-all">{result.originalUrl || url}</h4>
-                    <p className={`mt-1 text-md ${
-                      result.status < 400 ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      Status: {result.status < 400 ? 'UP' : 'DOWN'}
-                    </p>
-                  </div>
-                  <div className="text-md text-white">
-                    Response Time: {result.responseTime}ms
+              <div className={`${isMobile ? 'flex justify-between items-end' : 'flex-1'}`}>
+                <div className={isMobile ? 'flex-1 mr-2' : 'w-full'}>
+                  <Skeleton width="100px" height="20px" className="mb-2" />
+                  <div className='flex flex-row items-center justify-between'>
+                    <Skeleton width="200px" height="40px" />
+                    <div className={`${isMobile ? 'flex items-end pb-2 ml-2' : 'flex items-center h-10'}`}>
+                      <Skeleton width="40px" height="40px" rounded="full" />
+                    </div>
                   </div>
                 </div>
-                <p className="mt-2 text-md text-gray-400">
-                  Last checked: {new Date(result.timestamp).toLocaleString()}
-                </p>
               </div>
-            ))}
+            </div>
+          ))}
+
+          <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex gap-4'} mt-6`}>
+            <Skeleton width={isMobile ? "100%" : "200px"} height="44px" />
+            <Skeleton width={isMobile ? "100%" : "100%"} height="44px" />
           </div>
         </div>
+      ) : (
+        <>
+          <form onSubmit={handleSubmit} className="space-y-4 text-md">
+            {urls.map((url, index) => (
+              <div key={index} className={`${isMobile ? 'flex flex-col space-y-4' : 'flex gap-4 items-end'}`}>
+                <div className="flex-1">
+                  <label htmlFor={`url-${index}`} className="block font-medium text-white text-start">
+                    Website URL
+                  </label>
+                  <input
+                    type="url"
+                    id={`url-${index}`}
+                    value={url.url}
+                    onChange={(e) => handleUrlChange(index, 'url', e.target.value)}
+                    placeholder="https://example.com"
+                    required
+                    className="mt-1 block w-full hover:border-[#E3CF20]"
+                  />
+                </div>
+
+                <div className={`${isMobile ? 'flex justify-between items-end' : 'flex-1'}`}>
+                  <div className={isMobile ? 'flex-1 mr-2' : 'w-full'}>
+                    <label htmlFor={`interval-${index}`} className="block font-medium text-white text-start">
+                      Check Interval
+                    </label>
+                    <div className='flex flex-row items-center justify-between'>
+                    <select
+                      id={`interval-${index}`}
+                      value={url.interval}
+                      onChange={(e) => handleUrlChange(index, 'interval', e.target.value)}
+                      className="mt-1 block w-full custom-select min-w-[200px]"
+                      suppressHydrationWarning
+                    >
+                      <option value="once">Once (no monitoring)</option>
+                      <option value="5m">5 minutes</option>
+                      <option value="10m">10 minutes</option>
+                      <option value="30m">30 minutes</option>
+                      <option value="1h">1 hour</option>
+                    </select>
+                    <div className={`${isMobile ? 'flex items-end pb-2 ml-2' : 'flex items-center h-10'}`}>
+                    {index > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveUrl(index)}
+                        className="text-red-400 hover:text-red-300 rounded-md flex items-center justify-center w-10 h-10"
+                        aria-label="Remove URL"
+                      >
+                        <Trash2 size={20} strokeWidth={1.5} />
+                      </button>
+                    )}
+                    {index === 0 && !isMobile && <div className="w-10 h-10"></div>}
+                  </div>
+                  </div>
+                  </div>
+                  
+                 
+                </div>
+              </div>
+            ))}
+
+            <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex gap-4'}`}>
+              <LoadingButton
+                type="button"
+                onClick={handleAddUrl}
+                variant="outline"
+                size="md"
+                className={`${isMobile ? 'w-full' : ''} flex items-center justify-center`}
+                disabled={isSubmitting}
+                suppressHydrationWarning
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2">
+                  <line x1="12" y1="5" x2="12" y2="19" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="5" y1="12" x2="19" y2="12" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" />
+                </svg> Add another URL
+              </LoadingButton>
+
+              <LoadingButton
+                type="submit"
+                loading={isSubmitting}
+                variant="primary"
+                size="md"
+                className={`${isMobile ? 'w-full' : 'flex-1'} text-md uppercase`}
+                suppressHydrationWarning
+              >
+                {submitButtonText}
+              </LoadingButton>
+            </div>
+          </form>
+
+          {Object.entries(healthCheckResults).length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium mb-2 text-white">Check Results</h3>
+              <div className="space-y-4">
+                {Object.entries(healthCheckResults).map(([url, result]) => (
+                  <div key={url} className="p-4 border border-[#333333] bg-[#1E1E1E] rounded-md">
+                    <div className={`${isMobile ? 'flex flex-col space-y-2' : 'flex justify-between items-center'}`}>
+                      <div>
+                        <h4 className="font-medium text-white break-all">{result.originalUrl || url}</h4>
+                        <p className={`mt-1 text-md ${
+                          result.status < 400 ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          Status: {result.status < 400 ? 'UP' : 'DOWN'}
+                        </p>
+                      </div>
+                      <div className="text-md text-white">
+                        Response Time: {result.responseTime}ms
+                      </div>
+                    </div>
+                    <p className="mt-2 text-md text-gray-400">
+                      Last checked: {new Date(result.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

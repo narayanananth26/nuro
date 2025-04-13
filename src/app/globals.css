@@ -121,6 +121,7 @@ button {
   background-color: var(--secondary-bg) !important;
   color: var(--text-color) !important;
   border-color: var(--border-color) !important;
+  
 }
 
 .custom-select option {
