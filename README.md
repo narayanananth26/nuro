@@ -1,6 +1,5 @@
 # Nuro - URL Health Monitoring Application
 
-![Nuro Logo](public/logo.png)
 
 Nuro is a comprehensive URL health monitoring application built with Next.js, MongoDB, and React. It allows users to monitor the health and performance of their websites and APIs.
 
