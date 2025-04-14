@@ -1,100 +1,79 @@
-# Nuro
+# Nuro - URL Health Monitoring Application
 
-A Next.js application for tracking expenses and budgeting.
+![Nuro Logo](public/logo.png)
+
+Nuro is a comprehensive URL health monitoring application built with Next.js, MongoDB, and React. It allows users to monitor the health and performance of their websites and APIs.
 
 ## Features
 
-- User authentication with NextAuth
-- MongoDB integration for data storage
-- Expense tracking and budget management
-- Data visualization with Recharts
-- History and reporting features
-- Responsive UI
-- Cron job functionality for scheduled tasks
+- **URL Health Monitoring**: Automatically check your URLs at configurable intervals
+- **Real-time Status Updates**: Track the up/down status of your endpoints
+- **Performance Metrics**: Monitor response times and status codes
+- **Detailed Logs**: View historical data about each monitored URL
+- **Export Functionality**: Download logs in CSV format
+- **User Authentication**: Secure access with NextAuth
+- **Responsive UI**: Modern interface that works on desktop and mobile
 
-## Prerequisites
+## Documentation
 
-- Node.js (v16 or higher)
-- MongoDB Atlas account or local MongoDB instance
-- npm or yarn
+- [API Reference](API-REFERENCE.md) - Details about the available API endpoints
+- [Docker Setup](DOCKER.md) - Instructions for running the application with Docker
+- [External Cron Setup](EXTERNAL-CRON.md) - Guide for setting up external cron jobs
 
 ## Getting Started
+
+### Prerequisites
+
+- Node.js 20.x or higher
+- MongoDB
+- npm or yarn
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/yourusername/nuro.git
    cd nuro
    ```
 
 2. Install dependencies:
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
-3. Set up environment variables:
-   - Copy `.env.example` to `.env.local` and fill in your values
+3. Create a `.env.local` file based on `.env.example`:
+   ```
+   MONGO_URI=your_mongodb_connection_string
+   NEXTAUTH_SECRET=your_nextauth_secret
+   NEXTAUTH_URL=http://localhost:3000
+   CRON_SECRET=your_cron_secret
+   ```
 
-4. Run the development server:
+4. Start the development server:
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Environment Variables
+### Production Deployment
 
-The following environment variables are required:
+For production deployment, see the [Docker Setup](DOCKER.md) documentation.
 
-- `MONGO_URI`: MongoDB connection string
-- `NEXTAUTH_SECRET`: Secret for NextAuth authentication
-- `NEXTAUTH_URL`: URL for NextAuth (e.g., http://localhost:3000)
-- `CRON_SECRET`: Secret for securing cron job endpoints
+## Architecture
 
-## Docker Support
-
-This project includes Docker configuration for containerized deployment:
-
-1. Build the Docker image:
-   ```bash
-   docker build -t nuro .
-   ```
-
-2. Run with Docker Compose:
-   ```bash
-   docker-compose up -d
-   ```
-
-For more details, see the `DOCKER.md` file.
-
-## Technology Stack
+Nuro uses a modern tech stack:
 
 - **Frontend**: Next.js, React, TailwindCSS
 - **Backend**: Next.js API routes
 - **Database**: MongoDB with Mongoose
 - **Authentication**: NextAuth.js
-- **Scheduled Tasks**: node-cron
-- **Data Visualization**: Recharts
+- **Monitoring**: Built-in cron system with node-cron
 
-## Project Structure
+## Contributing
 
-- `/src/app`: Application routes and pages
-- `/src/components`: Reusable React components
-- `/src/models`: MongoDB models
-- `/src/lib`: Utility libraries
-- `/src/utils`: Helper functions
-- `/src/contexts`: React context providers
-- `/public`: Static assets
-
-## External Cron Jobs
-
-For information about setting up external cron jobs, refer to `README-EXTERNAL-CRON.md`.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[MIT](LICENSE) 
+This project is licensed under the MIT License - see the LICENSE file for details. 

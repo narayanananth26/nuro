@@ -1,110 +1,85 @@
-# Docker Setup Instructions
+# Docker Setup for Nuro
 
-This document provides instructions for running the Nuro application using Docker.
+This document outlines how to use Docker to develop, build, and deploy the Nuro application.
 
 ## Prerequisites
 
-1. Install [Docker](https://docs.docker.com/get-docker/)
-2. Install [Docker Compose](https://docs.docker.com/compose/install/)
+- Docker and Docker Compose installed on your system
+- Git repository cloned locally
 
-## Environment Setup
+## Environment Variables
 
-1. Create a `.env.docker` file in the root directory with the following content:
-   ```env
-   NEXTAUTH_SECRET=your_nextauth_secret
-   NEXTAUTH_URL=http://localhost:3000
-   CRON_SECRET=your_cron_secret
-   ```
+Before running the application with Docker, you'll need to set up the following environment variables:
 
-   Note: Replace the secret values with your own secure values.
+- `MONGO_URI`: MongoDB connection string
+- `NEXTAUTH_SECRET`: Secret for NextAuth authentication
+- `NEXTAUTH_URL`: URL for NextAuth (e.g., http://localhost:3000 for local development)
+- `CRON_SECRET`: Secret for securing cron endpoints
 
-## Running the Application
+You can set these in a `.env` file at the root of the project. Refer to `.env.example` for the required format.
 
-1. Build and start the containers:
-   ```bash
-   docker-compose up --build
-   ```
-   This command will:
-   - Build the Next.js application container
-   - Start the MongoDB container
-   - Set up the network between containers
-   - Mount necessary volumes for data persistence
+## Development with Docker
 
-2. Access the application at:
-   ```
-   http://localhost:3000
-   ```
+To run the application in development mode with Docker:
 
-3. To run the containers in detached mode (background):
-   ```bash
-   docker-compose up -d
-   ```
+```bash
+docker compose up
+```
 
-## Stopping the Application
+This will:
+- Build the application using the development target in the Dockerfile
+- Start a MongoDB container
+- Mount your source code for hot reloading
+- Expose the application on port 3000
 
-1. If running in foreground, press `Ctrl+C`
+## Production Build
 
-2. If running in detached mode:
-   ```bash
-   docker-compose down
-   ```
+To build the production Docker image:
 
-## Useful Docker Commands
+```bash
+docker build -t nuro-app \
+  --build-arg MONGO_URI=your_mongo_uri \
+  --build-arg NEXTAUTH_SECRET=your_nextauth_secret \
+  --build-arg NEXTAUTH_URL=your_nextauth_url \
+  --build-arg CRON_SECRET=your_cron_secret \
+  .
+```
 
-- View running containers:
-  ```bash
-  docker ps
-  ```
+To run the production build:
 
-- View container logs:
-  ```bash
-  docker-compose logs app    # For Next.js application logs
-  docker-compose logs mongodb # For MongoDB logs
-  ```
+```bash
+docker run -p 3000:3000 nuro-app
+```
 
-- Restart containers:
-  ```bash
-  docker-compose restart
-  ```
+## Docker Compose Configuration
 
-- Remove containers and networks (preserves volumes):
-  ```bash
-  docker-compose down
-  ```
+The `docker-compose.yml` file includes:
 
-- Remove everything including volumes:
-  ```bash
-  docker-compose down -v
-  ```
+1. **App Service**:
+   - Uses the Dockerfile with the development target
+   - Exposes port 3000
+   - Sets up file watching for hot reloading
+   - Depends on the MongoDB service
+
+2. **MongoDB Service**:
+   - Uses the latest MongoDB image
+   - Exposes port 27017
+   - Persists data using a Docker volume
+
+## Multi-Stage Build
+
+The Dockerfile uses a multi-stage build process:
+
+1. **deps**: Installs Node.js dependencies
+2. **dev**: Used for development with file watching
+3. **builder**: Builds the Next.js application
+4. **runner**: Production-optimized image with minimal footprint
 
 ## Troubleshooting
 
-1. If the application fails to start, check the logs:
-   ```bash
-   docker-compose logs app
-   ```
+If you encounter issues with Docker:
 
-2. If MongoDB connection fails:
-   - Ensure MongoDB container is running: `docker ps`
-   - Check MongoDB logs: `docker-compose logs mongodb`
-   - Verify the MongoDB connection string in docker-compose.yml
-
-3. For permission issues:
-   - Ensure your user has permissions to run Docker commands
-   - Try running commands with sudo (Linux/Mac)
-
-## Container Details
-
-- Next.js application runs on port 3000
-- MongoDB runs on port 27017
-- MongoDB data is persisted in a named volume: `mongodb_data`
-
-## Production Deployment Notes
-
-For production deployment:
-
-1. Update the `NEXTAUTH_URL` to match your production domain
-2. Use strong, unique secrets for `NEXTAUTH_SECRET` and `CRON_SECRET`
-3. Consider adding SSL/TLS configuration
-4. Review and adjust container resource limits as needed
-5. Implement proper backup strategy for MongoDB data 
+1. Ensure all required environment variables are set
+2. Verify MongoDB connection is working
+3. Check Docker logs with `docker compose logs`
+4. Ensure ports 3000 and 27017 are not already in use 
