@@ -37,7 +37,7 @@ This will:
 To build the production Docker image:
 
 ```bash
-docker build -t nuro-app \
+docker build -t nuro \
   --build-arg MONGO_URI=your_mongo_uri \
   --build-arg NEXTAUTH_SECRET=your_nextauth_secret \
   --build-arg NEXTAUTH_URL=your_nextauth_url \
